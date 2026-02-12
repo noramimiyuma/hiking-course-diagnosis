@@ -91,6 +91,34 @@
     .stroll-note{margin-bottom:14px;padding:12px 16px;background:#e0f2f1;border-radius:10px;font-size:13px;color:#00695c;line-height:1.6}
     .stroll-note strong{color:#004d40}
 
+    /* seasonal */
+    .season-panel{margin-bottom:18px;border-radius:14px;overflow:hidden;border:1px solid #e0e8e0}
+    .season-header{padding:14px 16px;color:#fff;display:flex;align-items:center;gap:10px}
+    .season-header .s-icon{font-size:28px}
+    .season-header .s-title{font-size:15px;font-weight:700}
+    .season-header .s-month{font-size:12px;opacity:.85;margin-top:2px}
+    .season-body{padding:14px 16px;background:#fff}
+    .season-summary{font-size:14px;color:#333;line-height:1.7;margin-bottom:10px}
+    .season-warn{font-size:12px;color:#c62828;background:#ffebee;padding:8px 12px;border-radius:8px;margin-bottom:8px;line-height:1.5}
+    .season-recommend{font-size:12px;color:#2e7d32;background:#e8f5e9;padding:8px 12px;border-radius:8px;line-height:1.5}
+    .season-recommend strong,.season-warn strong{font-weight:700}
+    .level-season-note{font-size:12px;color:#555;background:#f5f5f5;padding:8px 12px;border-radius:8px;margin-top:8px;line-height:1.5}
+    .spring-bg{background:linear-gradient(135deg,#e91e63,#f06292)}
+    .summer-bg{background:linear-gradient(135deg,#00897b,#26a69a)}
+    .autumn-bg{background:linear-gradient(135deg,#e65100,#ff8f00)}
+    .winter-bg{background:linear-gradient(135deg,#1565c0,#42a5f5)}
+
+    /* card season indicators */
+    .season-indicator{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+    .si-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;display:inline-flex;align-items:center;gap:4px}
+    .si-best{background:linear-gradient(135deg,#ff6f00,#ff8f00);color:#fff}
+    .si-highlight{background:linear-gradient(135deg,#d32f2f,#e53935);color:#fff;animation:pulse 2s infinite}
+    .si-ok{background:#e8f5e9;color:#2e7d32}
+    .si-offseason{background:#f5f5f5;color:#999}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
+    .highlight-text{font-size:12px;color:#c62828;font-weight:600;margin-left:4px}
+    .now-tag{display:inline-block;background:linear-gradient(135deg,#ff6f00,#ff8f00);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:5px;vertical-align:middle}
+
     .btn-restart{display:block;width:100%;margin-top:20px;padding:12px;background:#fff;border:2px solid #2d6a4f;color:#2d6a4f;font-size:15px;font-weight:600;border-radius:12px;cursor:pointer;transition:all .2s}
     .btn-restart:hover{background:#2d6a4f;color:#fff}
     .hidden{display:none}
@@ -274,16 +302,47 @@ function renderCard(c,color){
   const isStroll=c.difficulty==="散策";
   const headerColor=isStroll?"linear-gradient(135deg,#00796b,#26a69a)":color;
   const badge=c.niche?'<span class="niche-b">穴場</span>':isStroll?'<span class="stroll-b">散策路</span>':'';
-  return `<div class="card">
+  const ss=getSeasonScore(c);
+  const hl=getHighlightText(c);
+  let siHtml='';
+  if(ss===3) siHtml=`<div class="season-indicator"><span class="si-badge si-highlight">🔥 今が旬！</span><span class="highlight-text">${hl}</span></div>`;
+  else if(ss===2) siHtml=`<div class="season-indicator"><span class="si-badge si-best">✨ ベストシーズン</span></div>`;
+  else if(ss===1) siHtml=`<div class="season-indicator"><span class="si-badge si-ok">✅ 今月OK</span></div>`;
+  else siHtml=`<div class="season-indicator"><span class="si-badge si-offseason">⏸️ シーズン外</span></div>`;
+  return `<div class="card" style="${ss===0?'opacity:.6':''}">
     <div class="card-h" style="background:${headerColor}">
-      <h3>${c.name}${badge}</h3>
+      <h3>${c.name}${badge}${ss===3?'<span class="now-tag">NOW</span>':''}</h3>
       <span class="diff-tag">${c.difficulty}</span>
     </div>
     <div class="card-b">
+      ${siHtml}
       <div class="c-meta"><span>⏱️ ${c.time}</span><span>📏 ${c.elevation}</span><span>📅 ${c.season}</span></div>
       <div class="c-tags">${c.tags.map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join("")}</div>
       <p class="c-desc">${c.description}</p>
       <div class="c-tips"><strong>💡 ツウ情報：</strong>${c.tips}</div>
+    </div>
+  </div>`;
+}
+
+function buildSeasonPanel(region, level){
+  const m=getCurrentMonth();
+  const s=getSeason(m);
+  const sl=getSeasonLabel(m);
+  const advice=SEASONAL_ADVICE[region]&&SEASONAL_ADVICE[region][m];
+  if(!advice) return '';
+  const bgClass={spring:"spring-bg",summer:"summer-bg",autumn:"autumn-bg",winter:"winter-bg"}[s];
+  const lvWarn=LEVEL_SEASON_WARNINGS[level]&&LEVEL_SEASON_WARNINGS[level][s];
+  return `<div class="season-panel">
+    <div class="season-header ${bgClass}">
+      <span class="s-icon">${advice.icon}</span>
+      <div><div class="s-title">${MONTH_NAMES[m]}（${sl}）の${REGIONS[region].name}エリア</div>
+      <div class="s-month">今の時期のコンディション＆おすすめ</div></div>
+    </div>
+    <div class="season-body">
+      <div class="season-summary">${advice.summary}</div>
+      <div class="season-warn"><strong>⚠️ 注意：</strong>${advice.warn}</div>
+      <div class="season-recommend"><strong>🌟 今月のおすすめ：</strong>${advice.recommend}</div>
+      ${lvWarn?`<div class="level-season-note"><strong>📋 ${LEVEL_META[level].level}レベルの方へ：</strong>${lvWarn}</div>`:''}
     </div>
   </div>`;
 }
@@ -301,22 +360,34 @@ function showResult(){
   const nearby=getNearbyExtras(selectedRegion,level);
   const strolls=strollDB[selectedRegion]||[];
 
+  // 「今が旬」コース（スコア2以上のものをスコア降順でソート）
+  const allCourses=[...pop,...niche,...strolls];
+  const nowPicks=allCourses.filter(c=>getSeasonScore(c)>=2).sort((a,b)=>getSeasonScore(b)-getSeasonScore(a));
+
   const allLocal=[...pop,...niche];
   const totalAll=allLocal.length+nearby.length+strolls.length;
+
+  const seasonPanel=buildSeasonPanel(selectedRegion,level);
 
   let html=`<div class="r-sec">
     <span class="r-badge lv-${level}">🎯 あなたは「${meta.level}」レベル</span>
     <div class="r-region">📍 ${selectedPref}（${REGIONS[selectedRegion].name}エリア）のおすすめ</div>
     <div class="r-sum"><p>${meta.message}</p></div>
+    ${seasonPanel}
     <div class="tabs">
       <div class="tab-btns">
-        <button class="tab-b active" onclick="sw(event,'t-all')">すべて (${totalAll})</button>
+        ${nowPicks.length?`<button class="tab-b active" onclick="sw(event,'t-now')">🔥 今が旬 (${nowPicks.length})</button>`:''}
+        <button class="tab-b ${nowPicks.length?'':'active'}" onclick="sw(event,'t-all')">すべて (${totalAll})</button>
         <button class="tab-b" onclick="sw(event,'t-pop')">定番 (${pop.length})</button>
         <button class="tab-b" onclick="sw(event,'t-niche')">穴場 (${niche.length})</button>
         <button class="tab-b" onclick="sw(event,'t-stroll')">散策路 (${strolls.length})</button>
         ${nearby.length?`<button class="tab-b" onclick="sw(event,'t-near')">近隣 (${nearby.length})</button>`:''}
       </div>
-      <div id="t-all" class="tab-c active"><div class="cards">
+      ${nowPicks.length?`<div id="t-now" class="tab-c active"><div class="cards">
+        <div class="stroll-note" style="background:#fff3e0;color:#e65100"><strong>🔥 ${MONTH_NAMES[getCurrentMonth()]}に行くならここ！</strong> — 今まさにベストシーズン＆見どころがあるコースを厳選</div>
+        ${nowPicks.map(c=>renderCard(c,color)).join("")}
+      </div></div>`:''}
+      <div id="t-all" class="tab-c ${nowPicks.length?'':'active'}"><div class="cards">
         ${allLocal.map(c=>renderCard(c,color)).join("")}
         ${strolls.length?`<div class="stroll-note"><strong>🌿 自然散策路</strong> — 私服OK・観光プランに組み込めるお手軽コース</div>`:''}
         ${strolls.map(c=>renderCard(c,color)).join("")}
