@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>あなたにぴったりの登山コース診断</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:linear-gradient(135deg,#1a472a 0%,#2d6a4f 30%,#52796f 60%,#84a98c 100%);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px}
+    .app{background:rgba(255,255,255,.96);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:680px;width:100%;overflow:hidden;margin:20px 0}
+    .hdr{background:linear-gradient(135deg,#1b4332,#2d6a4f,#40916c);color:#fff;padding:28px 24px;text-align:center;position:relative;overflow:hidden}
+    .hdr::before{content:"";position:absolute;top:-30px;right:-30px;width:140px;height:140px;background:rgba(255,255,255,.06);border-radius:50%}
+    .hdr-icon{font-size:42px;margin-bottom:8px}
+    .hdr h1{font-size:21px;font-weight:700;letter-spacing:1px}
+    .hdr p{font-size:13px;opacity:.8;margin-top:4px}
+    .cnt{padding:24px 22px}
+
+    /* progress */
+    .prog{margin-bottom:22px}.prog-lbl{font-size:13px;color:#666;margin-bottom:6px;display:flex;justify-content:space-between}
+    .prog-bar{height:6px;background:#e0e0e0;border-radius:3px;overflow:hidden}
+    .prog-fill{height:100%;background:linear-gradient(90deg,#40916c,#52b788);border-radius:3px;transition:width .4s}
+
+    /* question */
+    .q-sec{animation:fadeIn .35s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .q-num{display:inline-block;background:#2d6a4f;color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:10px}
+    .q-txt{font-size:17px;font-weight:600;color:#1b1b1b;margin-bottom:18px;line-height:1.6}
+    .opts{display:flex;flex-direction:column;gap:8px}
+    .opt-btn{display:flex;align-items:center;gap:12px;padding:13px 16px;background:#f8faf8;border:2px solid #e0e8e0;border-radius:12px;cursor:pointer;font-size:14px;color:#333;transition:all .2s;text-align:left}
+    .opt-btn:hover{border-color:#52b788;background:#edf7f0;transform:translateX(4px)}
+    .opt-btn .oi{font-size:22px;flex-shrink:0}.opt-btn .ol{line-height:1.4}
+
+    /* prefecture selector */
+    .pref-sec{animation:fadeIn .35s ease}
+    .pref-region{margin-bottom:16px}
+    .pref-region-name{font-size:13px;font-weight:700;color:#2d6a4f;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #e0e8e0}
+    .pref-grid{display:flex;flex-wrap:wrap;gap:6px}
+    .pref-btn{padding:8px 12px;border:2px solid #e0e8e0;border-radius:8px;background:#f8faf8;font-size:13px;color:#333;cursor:pointer;transition:all .2s}
+    .pref-btn:hover{border-color:#52b788;background:#edf7f0}
+    .pref-btn.selected{border-color:#2d6a4f;background:#2d6a4f;color:#fff}
+
+    /* start */
+    .start{text-align:center;padding:12px 0}
+    .start-d{color:#555;font-size:15px;line-height:1.8;margin-bottom:18px}
+    .start-f{display:flex;justify-content:center;gap:20px;margin-bottom:24px;flex-wrap:wrap}
+    .start-fi{text-align:center;font-size:12px;color:#777}.start-fi .fi{font-size:26px;margin-bottom:2px}
+    .btn-main{display:inline-block;background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;font-size:16px;font-weight:600;padding:14px 44px;border:none;border-radius:30px;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 16px rgba(27,67,50,.3)}
+    .btn-main:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(27,67,50,.4)}
+
+    /* result */
+    .r-sec{animation:fadeIn .5s ease}
+    .r-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:10px}
+    .lv-entry{background:#e8f5e9;color:#1b5e20}
+    .lv-beginner{background:#d8f3dc;color:#1b4332}
+    .lv-intermediate{background:#fff3cd;color:#7c5e10}
+    .lv-advanced{background:#ffd6cc;color:#9c2c0c}
+    .lv-expert{background:#e8d0f0;color:#4a148c}
+    .r-region{font-size:13px;color:#666;margin-bottom:14px}
+    .r-sum{background:#f5f9f6;border-radius:12px;padding:14px 16px;margin-bottom:20px}
+    .r-sum p{font-size:14px;color:#555;line-height:1.7}
+
+    /* tabs */
+    .tabs{margin-bottom:18px}
+    .tab-btns{display:flex;border-bottom:2px solid #e0e8e0}
+    .tab-b{flex:1;padding:9px 6px;background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;font-size:13px;font-weight:600;color:#999;transition:all .2s;margin-bottom:-2px}
+    .tab-b.active{color:#2d6a4f;border-bottom-color:#2d6a4f}
+    .tab-b:hover{color:#40916c}
+    .tab-c{display:none;padding-top:14px}.tab-c.active{display:block}
+
+    /* cards */
+    .cards{display:flex;flex-direction:column;gap:12px}
+    .card{border:1px solid #e0e8e0;border-radius:14px;overflow:hidden;transition:box-shadow .2s}
+    .card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}
+    .card-h{padding:12px 16px;color:#fff;display:flex;justify-content:space-between;align-items:center}
+    .card-h h3{font-size:14px;font-weight:700}
+    .diff-tag{font-size:10px;background:rgba(255,255,255,.25);padding:3px 9px;border-radius:10px}
+    .card-b{padding:12px 16px}
+    .c-meta{display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:8px}
+    .c-meta span{font-size:12px;color:#777}
+    .c-desc{font-size:13px;color:#444;line-height:1.7;margin-bottom:8px}
+    .c-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+    .tag{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600}
+    .tag-highlight{background:#fff3cd;color:#856404}.tag-niche{background:#e8d5f5;color:#6a1b9a}
+    .tag-view{background:#d1ecf1;color:#0c5460}.tag-nature{background:#d4edda;color:#155724}
+    .tag-season{background:#ffe0e6;color:#8b1a2b}
+    .tag-stroll{background:#e0f2f1;color:#00695c}
+    .c-tips{background:#f8faf8;border-radius:8px;padding:8px 12px;font-size:12px;color:#666;line-height:1.6}
+    .c-tips strong{color:#2d6a4f}
+    .niche-b{display:inline-block;background:linear-gradient(135deg,#7b1fa2,#9c27b0);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:6px;vertical-align:middle}
+    .stroll-b{display:inline-block;background:linear-gradient(135deg,#00796b,#26a69a);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:6px;vertical-align:middle}
+    .stroll-note{margin-bottom:14px;padding:12px 16px;background:#e0f2f1;border-radius:10px;font-size:13px;color:#00695c;line-height:1.6}
+    .stroll-note strong{color:#004d40}
+
+    .btn-restart{display:block;width:100%;margin-top:20px;padding:12px;background:#fff;border:2px solid #2d6a4f;color:#2d6a4f;font-size:15px;font-weight:600;border-radius:12px;cursor:pointer;transition:all .2s}
+    .btn-restart:hover{background:#2d6a4f;color:#fff}
+    .hidden{display:none}
+
+    /* nearby note */
+    .nearby-note{margin-top:16px;padding:12px 16px;background:#f0f4f8;border-radius:10px;font-size:13px;color:#555;line-height:1.6}
+    .nearby-note strong{color:#2d6a4f}
+
+    @media(max-width:480px){.cnt{padding:18px 14px}.pref-btn{padding:6px 10px;font-size:12px}.tab-b{font-size:12px;padding:7px 4px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <div class="hdr-icon">🏔️</div>
+    <h1>登山コース診断</h1>
+    <p>お住まいのエリアに合わせたおすすめコースを提案</p>
+  </div>
+  <div class="cnt">
+    <!-- Start -->
+    <div id="v-start" class="start">
+      <p class="start-d">あなたの体力・生活スタイル・お住まいの地域に合わせて<br>定番から知る人ぞ知る穴場、気軽な自然散策路まで<br>最適なコースをご提案します。</p>
+      <div class="start-f">
+        <div class="start-fi"><div class="fi">📋</div>全8問</div>
+        <div class="start-fi"><div class="fi">🗾</div>47都道府県対応</div>
+        <div class="start-fi"><div class="fi">💎</div>穴場コース収録</div>
+        <div class="start-fi"><div class="fi">🌿</div>自然散策路</div>
+      </div>
+      <button class="btn-main" onclick="startQuiz()">診断をはじめる</button>
+    </div>
+
+    <!-- Prefecture -->
+    <div id="v-pref" class="hidden"></div>
+
+    <!-- Questions -->
+    <div id="v-quiz" class="hidden">
+      <div class="prog">
+        <div class="prog-lbl"><span id="p-txt"></span><span id="p-pct"></span></div>
+        <div class="prog-bar"><div class="prog-fill" id="p-fill"></div></div>
+      </div>
+      <div id="q-box"></div>
+    </div>
+
+    <!-- Result -->
+    <div id="v-result" class="hidden"></div>
+  </div>
+</div>
+
+<script src="mountains.js"></script>
+<script>
+// ============ QUESTIONS ============
+const questions=[
+  {id:"exercise",text:"普段の運動習慣を教えてください",options:[
+    {icon:"🛋️",label:"ほとんど運動しない",score:1},{icon:"🚶",label:"週1〜2回、散歩やストレッチをする",score:2},
+    {icon:"🏃",label:"週3回以上、ジョギングや筋トレをする",score:3},{icon:"💪",label:"毎日ハードな運動をしている",score:4}]},
+  {id:"weekend",text:"週末はどのように過ごしていますか？",options:[
+    {icon:"📺",label:"家でゆっくり過ごす",score:1},{icon:"🛍️",label:"買い物や街歩きに出かける",score:2},
+    {icon:"🌳",label:"公園や自然の中で過ごす",score:3},{icon:"🧗",label:"登山・キャンプなどアクティブに過ごす",score:4}]},
+  {id:"stamina",text:"階段の上り下りについてどう感じますか？",options:[
+    {icon:"😵",label:"3階分でもかなりきつい",score:1},{icon:"😅",label:"5階分くらいなら何とか大丈夫",score:2},
+    {icon:"😊",label:"10階分くらいは余裕",score:3},{icon:"😤",label:"何階でもまったく苦にならない",score:4}]},
+  {id:"hiking_exp",text:"登山やハイキングの経験はどのくらいですか？",options:[
+    {icon:"🔰",label:"まったくの未経験",score:1},{icon:"👟",label:"ハイキング程度なら数回ある",score:2},
+    {icon:"🥾",label:"日帰り登山を何度も経験している",score:3},{icon:"⛰️",label:"山小屋泊・縦走など本格的な経験が豊富",score:4}]},
+  {id:"duration",text:"1回の山行にかけられる時間は？",options:[
+    {icon:"⏰",label:"2〜3時間が限度",score:1},{icon:"🕐",label:"半日（4〜5時間）くらい",score:2},
+    {icon:"🌅",label:"丸一日（6〜8時間）かけてOK",score:3},{icon:"🏕️",label:"泊まりがけでもOK",score:4}]},
+  {id:"preference",text:"山に求める魅力で一番近いのは？",options:[
+    {icon:"🌸",label:"花や植物、穏やかな自然を楽しみたい",score:1},{icon:"📸",label:"絶景の写真を撮りたい・SNS映え",score:2},
+    {icon:"🗻",label:"頂上に立つ達成感を味わいたい",score:3},{icon:"🧭",label:"人の少ない静かな山域を歩きたい",score:4}]},
+  {id:"risk",text:"岩場や鎖場についてどう思いますか？",options:[
+    {icon:"🙅",label:"絶対に避けたい",score:1},{icon:"🤔",label:"少しならチャレンジしてみたい",score:2},
+    {icon:"🙂",label:"ある程度の岩場なら楽しめる",score:3},{icon:"🤩",label:"ガンガン攻めたい、むしろ好き",score:4}]},
+];
+
+// ============ STATE ============
+let selectedPref="";
+let selectedRegion="";
+let curQ=0, totalScore=0, answers={};
+
+// ============ VIEWS ============
+function hide(...ids){ids.forEach(i=>document.getElementById(i).classList.add("hidden"))}
+function show(...ids){ids.forEach(i=>document.getElementById(i).classList.remove("hidden"))}
+
+function startQuiz(){
+  hide("v-start","v-result","v-quiz");
+  show("v-pref");
+  renderPrefSelector();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function renderPrefSelector(){
+  const el=document.getElementById("v-pref");
+  let html=`<div class="pref-sec">
+    <span class="q-num">STEP 1</span>
+    <p class="q-txt">お住まいの都道府県を選んでください</p>`;
+  for(const[key,r] of Object.entries(REGIONS)){
+    html+=`<div class="pref-region"><div class="pref-region-name">${r.name}</div><div class="pref-grid">`;
+    r.prefs.forEach(p=>{
+      html+=`<button class="pref-btn" data-pref="${p}" onclick="selectPref(this,'${p}','${key}')">${p.replace(/県|府|都/,"")}</button>`;
+    });
+    html+=`</div></div>`;
+  }
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+
+function selectPref(btn,pref,region){
+  document.querySelectorAll(".pref-btn").forEach(b=>b.classList.remove("selected"));
+  btn.classList.add("selected");
+  selectedPref=pref;
+  selectedRegion=region;
+  // small delay then go to questions
+  setTimeout(()=>{
+    hide("v-pref");show("v-quiz");
+    curQ=0;totalScore=0;answers={};
+    renderQ();
+  },300);
+}
+
+function renderQ(){
+  const q=questions[curQ],total=questions.length;
+  const pct=Math.round(((curQ)/total)*100);
+  document.getElementById("p-txt").textContent=`質問 ${curQ+1} / ${total}`;
+  document.getElementById("p-pct").textContent=pct+"%";
+  document.getElementById("p-fill").style.width=pct+"%";
+  document.getElementById("q-box").innerHTML=`
+    <div class="q-sec">
+      <span class="q-num">Q${curQ+1}</span>
+      <p class="q-txt">${q.text}</p>
+      <div class="opts">${q.options.map(o=>`
+        <button class="opt-btn" onclick="answer('${q.id}',${o.score})">
+          <span class="oi">${o.icon}</span><span class="ol">${o.label}</span>
+        </button>`).join("")}
+      </div>
+    </div>`;
+}
+
+function answer(id,score){
+  answers[id]=score;totalScore+=score;curQ++;
+  if(curQ<questions.length) renderQ(); else showResult();
+}
+
+function getLevel(s){
+  if(s<=10) return "entry";
+  if(s<=14) return "beginner";
+  if(s<=19) return "intermediate";
+  if(s<=24) return "advanced";
+  return "expert";
+}
+
+// ============ NEARBY REGION LOGIC ============
+const ADJACENT={
+  hokkaido:["tohoku"],
+  tohoku:["hokkaido","kanto"],
+  kanto:["tohoku","chubu"],
+  chubu:["kanto","kansai","tohoku"],
+  kansai:["chubu","chugoku","shikoku"],
+  chugoku:["kansai","shikoku","kyushu"],
+  shikoku:["kansai","chugoku","kyushu"],
+  kyushu:["chugoku","shikoku"],
+};
+
+function getNearbyExtras(region,level){
+  const adj=ADJACENT[region]||[];
+  let extras=[];
+  adj.forEach(r=>{
+    const data=mountainDB[r]&&mountainDB[r][level];
+    if(!data) return;
+    // pick 1 niche from adjacent
+    if(data.niche&&data.niche.length>0){
+      const pick=data.niche[Math.floor(Math.random()*data.niche.length)];
+      extras.push({...pick, _fromRegion:REGIONS[r].name});
+    }
+  });
+  return extras.slice(0,2); // max 2 nearby
+}
+
+// ============ RENDER RESULT ============
+function renderCard(c,color){
+  const isStroll=c.difficulty==="散策";
+  const headerColor=isStroll?"linear-gradient(135deg,#00796b,#26a69a)":color;
+  const badge=c.niche?'<span class="niche-b">穴場</span>':isStroll?'<span class="stroll-b">散策路</span>':'';
+  return `<div class="card">
+    <div class="card-h" style="background:${headerColor}">
+      <h3>${c.name}${badge}</h3>
+      <span class="diff-tag">${c.difficulty}</span>
+    </div>
+    <div class="card-b">
+      <div class="c-meta"><span>⏱️ ${c.time}</span><span>📏 ${c.elevation}</span><span>📅 ${c.season}</span></div>
+      <div class="c-tags">${c.tags.map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join("")}</div>
+      <p class="c-desc">${c.description}</p>
+      <div class="c-tips"><strong>💡 ツウ情報：</strong>${c.tips}</div>
+    </div>
+  </div>`;
+}
+
+function showResult(){
+  hide("v-quiz");show("v-result");
+  window.scrollTo({top:0,behavior:"smooth"});
+
+  const level=getLevel(totalScore);
+  const meta=LEVEL_META[level];
+  const color=LEVEL_COLORS[level];
+  const regionData=mountainDB[selectedRegion]&&mountainDB[selectedRegion][level];
+  const pop=regionData?regionData.popular:[];
+  const niche=regionData?regionData.niche:[];
+  const nearby=getNearbyExtras(selectedRegion,level);
+  const strolls=strollDB[selectedRegion]||[];
+
+  const allLocal=[...pop,...niche];
+  const totalAll=allLocal.length+nearby.length+strolls.length;
+
+  let html=`<div class="r-sec">
+    <span class="r-badge lv-${level}">🎯 あなたは「${meta.level}」レベル</span>
+    <div class="r-region">📍 ${selectedPref}（${REGIONS[selectedRegion].name}エリア）のおすすめ</div>
+    <div class="r-sum"><p>${meta.message}</p></div>
+    <div class="tabs">
+      <div class="tab-btns">
+        <button class="tab-b active" onclick="sw(event,'t-all')">すべて (${totalAll})</button>
+        <button class="tab-b" onclick="sw(event,'t-pop')">定番 (${pop.length})</button>
+        <button class="tab-b" onclick="sw(event,'t-niche')">穴場 (${niche.length})</button>
+        <button class="tab-b" onclick="sw(event,'t-stroll')">散策路 (${strolls.length})</button>
+        ${nearby.length?`<button class="tab-b" onclick="sw(event,'t-near')">近隣 (${nearby.length})</button>`:''}
+      </div>
+      <div id="t-all" class="tab-c active"><div class="cards">
+        ${allLocal.map(c=>renderCard(c,color)).join("")}
+        ${strolls.length?`<div class="stroll-note"><strong>🌿 自然散策路</strong> — 私服OK・観光プランに組み込めるお手軽コース</div>`:''}
+        ${strolls.map(c=>renderCard(c,color)).join("")}
+        ${nearby.length?`<div class="nearby-note"><strong>🚗 近隣エリアのおすすめ</strong>（少し足を延ばせば行ける山）</div>`:''}
+        ${nearby.map(c=>renderCard(c,color)).join("")}
+      </div></div>
+      <div id="t-pop" class="tab-c"><div class="cards">${pop.map(c=>renderCard(c,color)).join("")}</div></div>
+      <div id="t-niche" class="tab-c"><div class="cards">${niche.map(c=>renderCard(c,color)).join("")}</div></div>
+      <div id="t-stroll" class="tab-c"><div class="cards">
+        <div class="stroll-note"><strong>🌿 自然散策路</strong> — 通常の私服で楽しめる、観光のプランにセットで組み込めるコースです。登山装備は不要です。</div>
+        ${strolls.map(c=>renderCard(c,color)).join("")}
+      </div></div>
+      ${nearby.length?`<div id="t-near" class="tab-c"><div class="cards">
+        <div class="nearby-note"><strong>🚗 近隣エリアのおすすめ</strong>（${nearby.map(c=>c._fromRegion).join("・")}エリア）</div>
+        ${nearby.map(c=>renderCard(c,color)).join("")}
+      </div></div>`:''}
+    </div>
+    <button class="btn-restart" onclick="startQuiz()">もう一度診断する</button>
+  </div>`;
+
+  document.getElementById("v-result").innerHTML=html;
+}
+
+function sw(e,id){
+  document.querySelectorAll(".tab-b").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".tab-c").forEach(t=>t.classList.remove("active"));
+  e.currentTarget.classList.add("active");
+  document.getElementById(id).classList.add("active");
+}
+</script>
+</body>
+</html>
