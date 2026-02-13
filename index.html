@@ -270,31 +270,39 @@ function getLevel(s){
   return "expert";
 }
 
-// ============ NEARBY REGION LOGIC ============
-const ADJACENT={
-  hokkaido:["tohoku"],
-  tohoku:["hokkaido","kanto"],
-  kanto:["tohoku","chubu"],
-  chubu:["kanto","kansai","tohoku"],
-  kansai:["chubu","chugoku","shikoku"],
-  chugoku:["kansai","shikoku","kyushu"],
-  shikoku:["kansai","chugoku","kyushu"],
-  kyushu:["chugoku","shikoku"],
-};
+// ============ PREF MATCHING & NEARBY LOGIC ============
+function matchPref(course,pref){
+  if(Array.isArray(course.pref)) return course.pref.includes(pref);
+  return course.pref===pref;
+}
+function dedup(arr){
+  const seen=new Set();
+  return arr.filter(c=>{if(seen.has(c.name))return false;seen.add(c.name);return true;});
+}
 
-function getNearbyExtras(region,level){
-  const adj=ADJACENT[region]||[];
+function getNearbyPrefExtras(pref,level){
+  const adjPrefs=PREF_ADJACENT[pref]||[];
   let extras=[];
-  adj.forEach(r=>{
-    const data=mountainDB[r]&&mountainDB[r][level];
-    if(!data) return;
-    // pick 1 niche from adjacent
-    if(data.niche&&data.niche.length>0){
-      const pick=data.niche[Math.floor(Math.random()*data.niche.length)];
-      extras.push({...pick, _fromRegion:REGIONS[r].name});
+  // 山岳コース: 隣接県からランダムピック
+  adjPrefs.forEach(ap=>{
+    for(const[rk,rv] of Object.entries(mountainDB)){
+      const d=rv[level]; if(!d) continue;
+      const all=[...(d.popular||[]),...(d.niche||[])].filter(c=>matchPref(c,ap));
+      if(all.length>0){
+        const pick=all[Math.floor(Math.random()*all.length)];
+        extras.push({...pick, _fromPref:ap});
+      }
     }
   });
-  return extras.slice(0,2); // max 2 nearby
+  // 散策路: 隣接県からランダムピック
+  adjPrefs.forEach(ap=>{
+    const s=prefStrollDB[ap]||[];
+    if(s.length>0){
+      const pick=s[Math.floor(Math.random()*s.length)];
+      extras.push({...pick, _fromPref:ap});
+    }
+  });
+  return dedup(extras).slice(0,6);
 }
 
 // ============ RENDER RESULT ============
@@ -335,7 +343,7 @@ function buildSeasonPanel(region, level){
   return `<div class="season-panel">
     <div class="season-header ${bgClass}">
       <span class="s-icon">${advice.icon}</span>
-      <div><div class="s-title">${MONTH_NAMES[m]}（${sl}）の${REGIONS[region].name}エリア</div>
+      <div><div class="s-title">${MONTH_NAMES[m]}（${sl}）の${selectedPref}エリア</div>
       <div class="s-month">今の時期のコンディション＆おすすめ</div></div>
     </div>
     <div class="season-body">
@@ -354,34 +362,45 @@ function showResult(){
   const level=getLevel(totalScore);
   const meta=LEVEL_META[level];
   const color=LEVEL_COLORS[level];
-  const regionData=mountainDB[selectedRegion]&&mountainDB[selectedRegion][level];
-  const pop=regionData?regionData.popular:[];
-  const niche=regionData?regionData.niche:[];
-  const nearby=getNearbyExtras(selectedRegion,level);
-  const strolls=strollDB[selectedRegion]||[];
+
+  // 全地域から selectedPref にマッチする山岳コースを収集
+  let pop=[],niche=[];
+  for(const[rk,rv] of Object.entries(mountainDB)){
+    const d=rv[level]; if(!d) continue;
+    pop.push(...(d.popular||[]).filter(c=>matchPref(c,selectedPref)));
+    niche.push(...(d.niche||[]).filter(c=>matchPref(c,selectedPref)));
+  }
+  pop=dedup(pop); niche=dedup(niche);
+  const strolls=prefStrollDB[selectedPref]||[];
+  const nearby=getNearbyPrefExtras(selectedPref,level);
 
   // 「今が旬」コース（スコア2以上のものをスコア降順でソート）
   const allCourses=[...pop,...niche,...strolls];
   const nowPicks=allCourses.filter(c=>getSeasonScore(c)>=2).sort((a,b)=>getSeasonScore(b)-getSeasonScore(a));
 
   const allLocal=[...pop,...niche];
+  const hasMountain=allLocal.length>0;
   const totalAll=allLocal.length+nearby.length+strolls.length;
 
   const seasonPanel=buildSeasonPanel(selectedRegion,level);
 
+  // 近隣県名リスト（重複排除）
+  const nearbyPrefs=[...new Set(nearby.map(c=>c._fromPref))];
+
   let html=`<div class="r-sec">
     <span class="r-badge lv-${level}">🎯 あなたは「${meta.level}」レベル</span>
-    <div class="r-region">📍 ${selectedPref}（${REGIONS[selectedRegion].name}エリア）のおすすめ</div>
+    <div class="r-region">📍 ${selectedPref} のおすすめ</div>
     <div class="r-sum"><p>${meta.message}</p></div>
     ${seasonPanel}
+    ${!hasMountain?`<div class="stroll-note" style="background:#e3f2fd;color:#1565c0"><strong>ℹ️ ${selectedPref}には掲載中の登山コースがありません。</strong>散策路と近隣県のコースをご覧ください！</div>`:''}
     <div class="tabs">
       <div class="tab-btns">
         ${nowPicks.length?`<button class="tab-b active" onclick="sw(event,'t-now')">🔥 今が旬 (${nowPicks.length})</button>`:''}
         <button class="tab-b ${nowPicks.length?'':'active'}" onclick="sw(event,'t-all')">すべて (${totalAll})</button>
-        <button class="tab-b" onclick="sw(event,'t-pop')">定番 (${pop.length})</button>
-        <button class="tab-b" onclick="sw(event,'t-niche')">穴場 (${niche.length})</button>
+        ${hasMountain?`<button class="tab-b" onclick="sw(event,'t-pop')">定番 (${pop.length})</button>`:''}
+        ${hasMountain?`<button class="tab-b" onclick="sw(event,'t-niche')">穴場 (${niche.length})</button>`:''}
         <button class="tab-b" onclick="sw(event,'t-stroll')">散策路 (${strolls.length})</button>
-        ${nearby.length?`<button class="tab-b" onclick="sw(event,'t-near')">近隣 (${nearby.length})</button>`:''}
+        ${nearby.length?`<button class="tab-b" onclick="sw(event,'t-near')">近隣県 (${nearby.length})</button>`:''}
       </div>
       ${nowPicks.length?`<div id="t-now" class="tab-c active"><div class="cards">
         <div class="stroll-note" style="background:#fff3e0;color:#e65100"><strong>🔥 ${MONTH_NAMES[getCurrentMonth()]}に行くならここ！</strong> — 今まさにベストシーズン＆見どころがあるコースを厳選</div>
@@ -391,17 +410,17 @@ function showResult(){
         ${allLocal.map(c=>renderCard(c,color)).join("")}
         ${strolls.length?`<div class="stroll-note"><strong>🌿 自然散策路</strong> — 私服OK・観光プランに組み込めるお手軽コース</div>`:''}
         ${strolls.map(c=>renderCard(c,color)).join("")}
-        ${nearby.length?`<div class="nearby-note"><strong>🚗 近隣エリアのおすすめ</strong>（少し足を延ばせば行ける山）</div>`:''}
+        ${nearby.length?`<div class="nearby-note"><strong>🚗 近隣県のおすすめ</strong>（少し足を延ばせば行けるコース）</div>`:''}
         ${nearby.map(c=>renderCard(c,color)).join("")}
       </div></div>
-      <div id="t-pop" class="tab-c"><div class="cards">${pop.map(c=>renderCard(c,color)).join("")}</div></div>
-      <div id="t-niche" class="tab-c"><div class="cards">${niche.map(c=>renderCard(c,color)).join("")}</div></div>
+      ${hasMountain?`<div id="t-pop" class="tab-c"><div class="cards">${pop.map(c=>renderCard(c,color)).join("")}</div></div>
+      <div id="t-niche" class="tab-c"><div class="cards">${niche.map(c=>renderCard(c,color)).join("")}</div></div>`:''}
       <div id="t-stroll" class="tab-c"><div class="cards">
         <div class="stroll-note"><strong>🌿 自然散策路</strong> — 通常の私服で楽しめる、観光のプランにセットで組み込めるコースです。登山装備は不要です。</div>
         ${strolls.map(c=>renderCard(c,color)).join("")}
       </div></div>
       ${nearby.length?`<div id="t-near" class="tab-c"><div class="cards">
-        <div class="nearby-note"><strong>🚗 近隣エリアのおすすめ</strong>（${nearby.map(c=>c._fromRegion).join("・")}エリア）</div>
+        <div class="nearby-note"><strong>🚗 近隣県のおすすめ</strong>（${nearbyPrefs.join("・")}のコース）</div>
         ${nearby.map(c=>renderCard(c,color)).join("")}
       </div></div>`:''}
     </div>
