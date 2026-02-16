@@ -11616,13 +11616,7 @@ const COURSE_LOCATIONS = {
   "水緑まんぷくコース～ショートコース～（山北町）":{lat:35.365,lng:139.078},
   "松田の源、あしがらの山河をめぐる歴史さんぽ（松田町）":{lat:35.345,lng:139.13},
   "三保ダム広場一周コース（山北町）":{lat:35.405,lng:139.038},
-  "箱根仙石原コース（箱根町）":{lat:35.255,lng:139.02}};
-
-function getCourseLocation(course) {
-  const loc = COURSE_LOCATIONS[course.name];
-  if (loc) return loc;
-  const pref = Array.isArray(course.pref) ? course.pref[0] : course.pref;
-  return PREF_CENTER[pref] || {lat:36.2,lng:138.25,
+  "箱根仙石原コース（箱根町）":{lat:35.255,lng:139.02},
   "大沼公園散策路（亀田郡）": {lat:42.059,lng:140.674},
   "小樽周辺自然歩道（小樽市）": {lat:43.1907,lng:140.9945},
   "フットパス　中島1周探検コース（虻田郡）": {lat:42.5872,lng:140.8534},
@@ -12175,4 +12169,10 @@ function getCourseLocation(course) {
   "猿ケ城遊歩道（垂水市）": {lat:31.4512,lng:130.7412},
   "湯湾岳登山道": {lat:28.2987,lng:129.4312}
 };
+
+function getCourseLocation(course) {
+  const loc = COURSE_LOCATIONS[course.name];
+  if (loc) return loc;
+  const pref = Array.isArray(course.pref) ? course.pref[0] : course.pref;
+  return PREF_CENTER[pref] || {lat:36.2,lng:138.25};
 }
