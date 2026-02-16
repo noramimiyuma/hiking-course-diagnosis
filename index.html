@@ -140,6 +140,25 @@
     .map-popup-title{font-size:14px;font-weight:700;color:#1b4332;margin-bottom:4px}
     .map-popup-meta{font-size:12px;color:#666;line-height:1.5}
     .map-popup-season{font-size:11px;margin-top:4px}
+
+    /* all-courses map */
+    .btn-allmap{background:#fff;border:2px solid #2d6a4f;color:#2d6a4f;font-size:14px;font-weight:600;padding:10px 28px;border-radius:24px;cursor:pointer;transition:all .2s}
+    .btn-allmap:hover{background:#2d6a4f;color:#fff;box-shadow:0 4px 12px rgba(27,67,50,.25)}
+    .allmap-header{margin-bottom:16px}
+    .allmap-back{background:none;border:none;color:#2d6a4f;font-size:13px;font-weight:600;cursor:pointer;padding:4px 0;margin-bottom:8px;display:inline-block}
+    .allmap-back:hover{text-decoration:underline}
+    .allmap-title{font-size:19px;font-weight:700;color:#1b4332;margin-bottom:4px}
+    .allmap-subtitle{font-size:13px;color:#777}
+    .allmap-filters{margin-bottom:12px}
+    .allmap-filter-group{margin-bottom:10px}
+    .allmap-filter-label{font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:6px}
+    .allmap-filter-btns{display:flex;flex-wrap:wrap;gap:6px}
+    .allmap-fbtn{padding:6px 12px;border:2px solid #e0e8e0;border-radius:8px;background:#f8faf8;font-size:12px;color:#555;cursor:pointer;transition:all .2s;font-weight:600}
+    .allmap-fbtn:hover{border-color:#52b788;background:#edf7f0}
+    .allmap-fbtn.active{border-color:#2d6a4f;background:#2d6a4f;color:#fff}
+    .allmap-count{font-size:13px;color:#666;margin-bottom:8px;text-align:right}
+    #allmap-container{height:500px;border-radius:12px;overflow:hidden;border:1px solid #e0e8e0}
+    @media(max-width:480px){#allmap-container{height:380px}.allmap-fbtn{padding:5px 9px;font-size:11px}}
   </style>
 </head>
 <body>
@@ -160,6 +179,9 @@
         <div class="start-fi"><div class="fi">🌿</div>自然散策路</div>
       </div>
       <button class="btn-main" onclick="startQuiz()">診断をはじめる</button>
+      <div style="margin-top:14px">
+        <button class="btn-allmap" onclick="showAllMap()">🗺️ 全国コース地図を見る</button>
+      </div>
     </div>
 
     <!-- Prefecture -->
@@ -176,6 +198,49 @@
 
     <!-- Result -->
     <div id="v-result" class="hidden"></div>
+
+    <!-- All Courses Map -->
+    <div id="v-allmap" class="hidden">
+      <div class="allmap-header">
+        <button class="allmap-back" onclick="backToStart()">← スタートに戻る</button>
+        <div class="allmap-title">🗺️ 全国コース地図</div>
+        <div class="allmap-subtitle">全コースを地図で探索できます</div>
+      </div>
+      <div class="allmap-filters">
+        <div class="allmap-filter-group">
+          <label class="allmap-filter-label">種類</label>
+          <div class="allmap-filter-btns" id="filter-type">
+            <button class="allmap-fbtn active" data-val="all" onclick="toggleAllMapFilter(this,'type')">すべて</button>
+            <button class="allmap-fbtn" data-val="popular" onclick="toggleAllMapFilter(this,'type')">定番</button>
+            <button class="allmap-fbtn" data-val="niche" onclick="toggleAllMapFilter(this,'type')">穴場</button>
+            <button class="allmap-fbtn" data-val="stroll" onclick="toggleAllMapFilter(this,'type')">散策路</button>
+          </div>
+        </div>
+        <div class="allmap-filter-group">
+          <label class="allmap-filter-label">難易度</label>
+          <div class="allmap-filter-btns" id="filter-diff">
+            <button class="allmap-fbtn active" data-val="all" onclick="toggleAllMapFilter(this,'diff')">すべて</button>
+            <button class="allmap-fbtn" data-val="entry" onclick="toggleAllMapFilter(this,'diff')">入門</button>
+            <button class="allmap-fbtn" data-val="beginner" onclick="toggleAllMapFilter(this,'diff')">初級</button>
+            <button class="allmap-fbtn" data-val="intermediate" onclick="toggleAllMapFilter(this,'diff')">中級</button>
+            <button class="allmap-fbtn" data-val="advanced" onclick="toggleAllMapFilter(this,'diff')">上級</button>
+            <button class="allmap-fbtn" data-val="expert" onclick="toggleAllMapFilter(this,'diff')">エキスパート</button>
+            <button class="allmap-fbtn" data-val="stroll" onclick="toggleAllMapFilter(this,'diff')">散策</button>
+          </div>
+        </div>
+      </div>
+      <div class="allmap-count" id="allmap-count"></div>
+      <div id="allmap-container"></div>
+      <div class="map-legend" style="margin-top:10px">
+        <div class="map-legend-item"><span class="map-legend-dot" style="background:#2d6a4f"></span>定番</div>
+        <div class="map-legend-item"><span class="map-legend-dot" style="background:#7b1fa2"></span>穴場</div>
+        <div class="map-legend-item"><span class="map-legend-dot" style="background:#00796b"></span>散策路</div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px">
+        <button class="btn-restart" style="flex:1;margin-top:0" onclick="backToStart()">🏠 スタートに戻る</button>
+        <button class="btn-restart" style="flex:1;margin-top:0;background:#2d6a4f;color:#fff" onclick="startQuiz()">📋 診断をはじめる</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -218,7 +283,7 @@ function hide(...ids){ids.forEach(i=>document.getElementById(i).classList.add("h
 function show(...ids){ids.forEach(i=>document.getElementById(i).classList.remove("hidden"))}
 
 function startQuiz(){
-  hide("v-start","v-result","v-quiz");
+  hide("v-start","v-result","v-quiz","v-allmap");
   show("v-pref");
   renderPrefSelector();
   window.scrollTo({top:0,behavior:"smooth"});
@@ -370,7 +435,7 @@ function buildSeasonPanel(region, level){
 }
 
 function showResult(){
-  hide("v-quiz");show("v-result");
+  hide("v-quiz","v-allmap");show("v-result");
   window.scrollTo({top:0,behavior:"smooth"});
   // 地図リセット
   if(mapInstance){mapInstance.remove();mapInstance=null;markerLayer=null;}
@@ -510,6 +575,113 @@ function addCourseMarker(course,color,category){
     <div class="map-popup-meta">${category}・${course.difficulty}${fromPref}<br>⏱️${course.time}・📏${course.elevation}<br>📅${course.season}</div>
     <div class="map-popup-season">${sl}</div>`;
   markerLayer.addLayer(L.marker([loc.lat,loc.lng],{icon}).bindPopup(popup,{maxWidth:250}));
+}
+
+// ============ ALL COURSES MAP ============
+let allMapInstance=null;
+let allMapMarkerLayer=null;
+let allCoursesCache=null;
+let allMapFilters={type:"all",diff:"all"};
+
+const DIFF_KEY_MAP={"入門":"entry","初級":"beginner","中級":"intermediate","上級":"advanced","エキスパート":"expert","中級〜上級":"intermediate_advanced","散策":"stroll"};
+
+function getAllCourses(){
+  if(allCoursesCache) return allCoursesCache;
+  const all=[];
+  const seen=new Set();
+  for(const[rk,rv] of Object.entries(mountainDB)){
+    for(const[level,ld] of Object.entries(rv)){
+      for(const c of (ld.popular||[])){
+        if(!seen.has(c.name)){seen.add(c.name);all.push(Object.assign({},c,{_category:c.niche?"niche":"popular",_level:level}));}
+      }
+      for(const c of (ld.niche||[])){
+        if(!seen.has(c.name)){seen.add(c.name);all.push(Object.assign({},c,{_category:"niche",_level:level}));}
+      }
+    }
+  }
+  for(const[pref,courses] of Object.entries(prefStrollDB)){
+    for(const c of courses){
+      if(!seen.has(c.name)){seen.add(c.name);all.push(Object.assign({},c,{_category:"stroll",_level:"stroll"}));}
+    }
+  }
+  allCoursesCache=all;
+  return all;
+}
+
+function showAllMap(){
+  hide("v-start","v-pref","v-quiz","v-result");
+  show("v-allmap");
+  window.scrollTo({top:0,behavior:"smooth"});
+  setTimeout(()=>initAllMap(),100);
+}
+
+function backToStart(){
+  hide("v-allmap","v-pref","v-quiz","v-result");
+  show("v-start");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function toggleAllMapFilter(btn,group){
+  btn.parentElement.querySelectorAll(".allmap-fbtn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  allMapFilters[group]=btn.dataset.val;
+  updateAllMapMarkers();
+}
+
+function initAllMap(){
+  if(allMapInstance){allMapInstance.invalidateSize();return;}
+  try{
+    allMapInstance=L.map('allmap-container').setView([36.2,138.25],5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom:18
+    }).addTo(allMapInstance);
+    allMapMarkerLayer=L.markerClusterGroup({showCoverageOnHover:false});
+    allMapInstance.addLayer(allMapMarkerLayer);
+    updateAllMapMarkers();
+    setTimeout(()=>allMapInstance.invalidateSize(),200);
+  }catch(e){
+    document.getElementById('allmap-container').innerHTML='<div style="padding:40px;text-align:center;color:#999">🗺️ 地図を読み込めませんでした</div>';
+  }
+}
+
+function updateAllMapMarkers(){
+  if(!allMapMarkerLayer) return;
+  allMapMarkerLayer.clearLayers();
+  const courses=getAllCourses();
+  const{type,diff}=allMapFilters;
+  let count=0;
+  const COLORS={popular:"#2d6a4f",niche:"#7b1fa2",stroll:"#00796b"};
+
+  courses.forEach(c=>{
+    if(type!=="all"&&c._category!==type) return;
+    if(diff!=="all"){
+      if(diff==="stroll"){if(c._level!=="stroll") return;}
+      else{
+        const dk=DIFF_KEY_MAP[c.difficulty]||c._level;
+        if(dk==="intermediate_advanced"){if(diff!=="intermediate"&&diff!=="advanced") return;}
+        else if(c._level!==diff) return;
+      }
+    }
+    const loc=getCourseLocation(c);
+    if(!loc) return;
+    const color=COLORS[c._category]||"#2d6a4f";
+    const icon=L.divIcon({className:'',
+      html:`<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+      iconSize:[14,14],iconAnchor:[7,7]});
+    const ss=getSeasonScore(c);
+    const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':ss===1?'✅ 今月OK':'⏸️ シーズン外';
+    const prefStr=Array.isArray(c.pref)?c.pref.join('・'):c.pref;
+    const catLabel=c._category==="niche"?"穴場":c._category==="stroll"?"散策路":"定番";
+    const popup=`<div class="map-popup-title">${c.name}</div>
+      <div class="map-popup-meta">${catLabel}・${c.difficulty}<br>📍 ${prefStr}<br>⏱️ ${c.time}・📏 ${c.elevation}<br>📅 ${c.season}</div>
+      <div class="map-popup-season">${sl}</div>`;
+    allMapMarkerLayer.addLayer(L.marker([loc.lat,loc.lng],{icon}).bindPopup(popup,{maxWidth:250}));
+    count++;
+  });
+
+  const el=document.getElementById('allmap-count');
+  if(el) el.textContent=`表示中: ${count}コース`;
 }
 </script>
 </body>
