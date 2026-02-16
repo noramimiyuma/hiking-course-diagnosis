@@ -608,7 +608,7 @@ function getAllCourses(){
   }
   for(const[pref,courses] of Object.entries(prefStrollDB)){
     for(const c of courses){
-      if(!seen.has(c.name)){seen.add(c.name);all.push(Object.assign({},c,{_category:"stroll",_level:"stroll"}));}
+      if(!seen.has(c.name)){seen.add(c.name);all.push(Object.assign({},c,{pref:c.pref||pref,_category:"stroll",_level:"stroll"}));}
     }
   }
   allCoursesCache=all;
