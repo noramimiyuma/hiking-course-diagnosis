@@ -159,6 +159,11 @@
     .allmap-count{font-size:13px;color:#666;margin-bottom:8px;text-align:right}
     #allmap-container{height:500px;border-radius:12px;overflow:hidden;border:1px solid #e0e8e0}
     @media(max-width:480px){#allmap-container{height:380px}.allmap-fbtn{padding:5px 9px;font-size:11px}}
+    .marker-dot{border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+    .marker-season{position:relative}
+    .marker-season::after{content:"";position:absolute;top:-4px;left:-4px;right:-4px;bottom:-4px;border-radius:50%;border:2px solid #ff6f00;animation:markerPulse 2s infinite;pointer-events:none}
+    @keyframes markerPulse{0%{transform:scale(1);opacity:.8}50%{transform:scale(1.6);opacity:0}100%{transform:scale(1);opacity:0}}
+    .marker-season-label{position:absolute;top:-20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ff6f00,#ff8f00);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap;pointer-events:none}
   </style>
 </head>
 <body>
@@ -235,6 +240,7 @@
         <div class="map-legend-item"><span class="map-legend-dot" style="background:#2d6a4f"></span>定番</div>
         <div class="map-legend-item"><span class="map-legend-dot" style="background:#7b1fa2"></span>穴場</div>
         <div class="map-legend-item"><span class="map-legend-dot" style="background:#00796b"></span>散策路</div>
+        <div class="map-legend-item" style="margin-left:8px;padding-left:8px;border-left:1px solid #ddd"><span style="font-size:14px">🔥</span>今が旬（大きいマーカー）</div>
       </div>
       <div style="margin-top:16px;display:flex;gap:10px">
         <button class="btn-restart" style="flex:1;margin-top:0" onclick="backToStart()">🏠 スタートに戻る</button>
@@ -544,16 +550,15 @@ function initMap(){
       attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom:18
     }).addTo(mapInstance);
-    markerLayer=L.markerClusterGroup({showCoverageOnHover:false});
+    markerLayer=L.layerGroup().addTo(mapInstance);
     const{pop,niche,strolls,nearby}=mapCourses;
     pop.forEach(c=>addCourseMarker(c,'#2d6a4f','定番'));
     niche.forEach(c=>addCourseMarker(c,'#7b1fa2','穴場'));
     strolls.forEach(c=>addCourseMarker(c,'#00796b','散策路'));
     nearby.forEach(c=>addCourseMarker(c,'#1565c0','近隣県'));
-    mapInstance.addLayer(markerLayer);
-    if(markerLayer.getLayers().length>0){
-      mapInstance.fitBounds(markerLayer.getBounds(),{padding:[30,30]});
-    }
+    const bounds=[];
+    markerLayer.eachLayer(m=>{if(m.getLatLng)bounds.push(m.getLatLng());});
+    if(bounds.length>0){mapInstance.fitBounds(L.latLngBounds(bounds),{padding:[30,30]});}
     setTimeout(()=>mapInstance.invalidateSize(),200);
   }catch(e){
     document.getElementById('map-container').innerHTML='<div style="padding:40px;text-align:center;color:#999">🗺️ 地図を読み込めませんでした</div>';
@@ -563,18 +568,20 @@ function initMap(){
 function addCourseMarker(course,color,category){
   const loc=getCourseLocation(course);
   if(!loc) return;
-  const icon=L.divIcon({
-    className:'',
-    html:`<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
-    iconSize:[14,14],iconAnchor:[7,7]
-  });
   const ss=getSeasonScore(course);
+  const isSeason=ss>=2;
+  const sz=isSeason?18:12;
+  const icon=L.divIcon({className:'',
+    html:isSeason
+      ?`<div class="marker-season" style="position:relative;width:${sz}px;height:${sz}px"><div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px"></div><div class="marker-season-label">🔥旬</div></div>`
+      :`<div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px;opacity:${ss===1?0.85:0.5}"></div>`,
+    iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
   const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':ss===1?'✅ 今月OK':'⏸️ シーズン外';
   const fromPref=course._fromPref?`<br>📍 ${course._fromPref}`:'';
-  const popup=`<div class="map-popup-title">${course.name}</div>
+  const popup=`<div class="map-popup-title">${course_season_icon(ss)} ${course.name}</div>
     <div class="map-popup-meta">${category}・${course.difficulty}${fromPref}<br>⏱️${course.time}・📏${course.elevation}<br>📅${course.season}</div>
     <div class="map-popup-season">${sl}</div>`;
-  markerLayer.addLayer(L.marker([loc.lat,loc.lng],{icon}).bindPopup(popup,{maxWidth:250}));
+  markerLayer.addLayer(L.marker([loc.lat,loc.lng],{icon,zIndexOffset:isSeason?1000:0}).bindPopup(popup,{maxWidth:250}));
 }
 
 // ============ ALL COURSES MAP ============
@@ -636,8 +643,7 @@ function initAllMap(){
       attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom:18
     }).addTo(allMapInstance);
-    allMapMarkerLayer=L.markerClusterGroup({showCoverageOnHover:false});
-    allMapInstance.addLayer(allMapMarkerLayer);
+    allMapMarkerLayer=L.layerGroup().addTo(allMapInstance);
     updateAllMapMarkers();
     setTimeout(()=>allMapInstance.invalidateSize(),200);
   }catch(e){
@@ -666,22 +672,31 @@ function updateAllMapMarkers(){
     const loc=getCourseLocation(c);
     if(!loc) return;
     const color=COLORS[c._category]||"#2d6a4f";
-    const icon=L.divIcon({className:'',
-      html:`<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
-      iconSize:[14,14],iconAnchor:[7,7]});
     const ss=getSeasonScore(c);
+    const isSeason=ss>=2;
+    const sz=isSeason?18:12;
+    const icon=L.divIcon({className:'',
+      html:isSeason
+        ?`<div class="marker-season" style="position:relative;width:${sz}px;height:${sz}px"><div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px"></div><div class="marker-season-label">🔥旬</div></div>`
+        :`<div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px;opacity:${ss===1?0.85:0.5}"></div>`,
+      iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
     const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':ss===1?'✅ 今月OK':'⏸️ シーズン外';
     const prefStr=Array.isArray(c.pref)?c.pref.join('・'):c.pref;
     const catLabel=c._category==="niche"?"穴場":c._category==="stroll"?"散策路":"定番";
-    const popup=`<div class="map-popup-title">${c.name}</div>
+    const popup=`<div class="map-popup-title">${course_season_icon(ss)} ${c.name}</div>
       <div class="map-popup-meta">${catLabel}・${c.difficulty}<br>📍 ${prefStr}<br>⏱️ ${c.time}・📏 ${c.elevation}<br>📅 ${c.season}</div>
       <div class="map-popup-season">${sl}</div>`;
-    allMapMarkerLayer.addLayer(L.marker([loc.lat,loc.lng],{icon}).bindPopup(popup,{maxWidth:250}));
+    const marker=L.marker([loc.lat,loc.lng],{icon,zIndexOffset:isSeason?1000:0}).bindPopup(popup,{maxWidth:250});
+    allMapMarkerLayer.addLayer(marker);
     count++;
   });
 
   const el=document.getElementById('allmap-count');
   if(el) el.textContent=`表示中: ${count}コース`;
+}
+
+function course_season_icon(ss){
+  return ss===3?'🔥':ss===2?'✨':ss===1?'✅':'⏸️';
 }
 </script>
 </body>
