@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>あなたにぴったりの登山コース診断</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:linear-gradient(135deg,#1a472a 0%,#2d6a4f 30%,#52796f 60%,#84a98c 100%);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px}
@@ -128,6 +131,15 @@
     .nearby-note strong{color:#2d6a4f}
 
     @media(max-width:480px){.cnt{padding:18px 14px}.pref-btn{padding:6px 10px;font-size:12px}.tab-b{font-size:12px;padding:7px 4px}}
+    /* map */
+    #map-container{height:400px;border-radius:12px;overflow:hidden;border:1px solid #e0e8e0}
+    @media(max-width:480px){#map-container{height:300px}}
+    .map-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;padding:10px 14px;background:#f8faf8;border-radius:10px;font-size:12px;color:#555}
+    .map-legend-item{display:flex;align-items:center;gap:4px}
+    .map-legend-dot{width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+    .map-popup-title{font-size:14px;font-weight:700;color:#1b4332;margin-bottom:4px}
+    .map-popup-meta{font-size:12px;color:#666;line-height:1.5}
+    .map-popup-season{font-size:11px;margin-top:4px}
   </style>
 </head>
 <body>
@@ -167,6 +179,8 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="mountains.js"></script>
 <script>
 // ============ QUESTIONS ============
@@ -358,6 +372,8 @@ function buildSeasonPanel(region, level){
 function showResult(){
   hide("v-quiz");show("v-result");
   window.scrollTo({top:0,behavior:"smooth"});
+  // 地図リセット
+  if(mapInstance){mapInstance.remove();mapInstance=null;markerLayer=null;}
 
   const level=getLevel(totalScore);
   const meta=LEVEL_META[level];
@@ -373,6 +389,7 @@ function showResult(){
   pop=dedup(pop); niche=dedup(niche);
   const strolls=prefStrollDB[selectedPref]||[];
   const nearby=getNearbyPrefExtras(selectedPref,level);
+  mapCourses={pop,niche,strolls,nearby};
 
   // 「今が旬」コース（スコア2以上のものをスコア降順でソート）
   const allCourses=[...pop,...niche,...strolls];
@@ -401,6 +418,7 @@ function showResult(){
         ${hasMountain?`<button class="tab-b" onclick="sw(event,'t-niche')">穴場 (${niche.length})</button>`:''}
         <button class="tab-b" onclick="sw(event,'t-stroll')">散策路 (${strolls.length})</button>
         ${nearby.length?`<button class="tab-b" onclick="sw(event,'t-near')">近隣県 (${nearby.length})</button>`:''}
+        <button class="tab-b" onclick="sw(event,'t-map')">🗺️ 地図</button>
       </div>
       ${nowPicks.length?`<div id="t-now" class="tab-c active"><div class="cards">
         <div class="stroll-note" style="background:#fff3e0;color:#e65100"><strong>🔥 ${MONTH_NAMES[getCurrentMonth()]}に行くならここ！</strong> — 今まさにベストシーズン＆見どころがあるコースを厳選</div>
@@ -423,6 +441,15 @@ function showResult(){
         <div class="nearby-note"><strong>🚗 近隣県のおすすめ</strong>（${nearbyPrefs.join("・")}のコース）</div>
         ${nearby.map(c=>renderCard(c,color)).join("")}
       </div></div>`:''}
+      <div id="t-map" class="tab-c">
+        <div id="map-container"></div>
+        <div class="map-legend">
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#2d6a4f"></span>定番</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#7b1fa2"></span>穴場</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#00796b"></span>散策路</div>
+          ${nearby.length?`<div class="map-legend-item"><span class="map-legend-dot" style="background:#1565c0"></span>近隣県</div>`:''}
+        </div>
+      </div>
     </div>
     <button class="btn-restart" onclick="startQuiz()">もう一度診断する</button>
   </div>`;
@@ -435,6 +462,54 @@ function sw(e,id){
   document.querySelectorAll(".tab-c").forEach(t=>t.classList.remove("active"));
   e.currentTarget.classList.add("active");
   document.getElementById(id).classList.add("active");
+  if(id==='t-map') initMap();
+}
+
+// ============ MAP ============
+let mapCourses={pop:[],niche:[],strolls:[],nearby:[]};
+let mapInstance=null;
+let markerLayer=null;
+
+function initMap(){
+  if(mapInstance){setTimeout(()=>mapInstance.invalidateSize(),100);return;}
+  try{
+    const center=PREF_CENTER[selectedPref]||{lat:36.2,lng:138.25};
+    mapInstance=L.map('map-container').setView([center.lat,center.lng],9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom:18
+    }).addTo(mapInstance);
+    markerLayer=L.markerClusterGroup({showCoverageOnHover:false});
+    const{pop,niche,strolls,nearby}=mapCourses;
+    pop.forEach(c=>addCourseMarker(c,'#2d6a4f','定番'));
+    niche.forEach(c=>addCourseMarker(c,'#7b1fa2','穴場'));
+    strolls.forEach(c=>addCourseMarker(c,'#00796b','散策路'));
+    nearby.forEach(c=>addCourseMarker(c,'#1565c0','近隣県'));
+    mapInstance.addLayer(markerLayer);
+    if(markerLayer.getLayers().length>0){
+      mapInstance.fitBounds(markerLayer.getBounds(),{padding:[30,30]});
+    }
+    setTimeout(()=>mapInstance.invalidateSize(),200);
+  }catch(e){
+    document.getElementById('map-container').innerHTML='<div style="padding:40px;text-align:center;color:#999">🗺️ 地図を読み込めませんでした</div>';
+  }
+}
+
+function addCourseMarker(course,color,category){
+  const loc=getCourseLocation(course);
+  if(!loc) return;
+  const icon=L.divIcon({
+    className:'',
+    html:`<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+    iconSize:[14,14],iconAnchor:[7,7]
+  });
+  const ss=getSeasonScore(course);
+  const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':ss===1?'✅ 今月OK':'⏸️ シーズン外';
+  const fromPref=course._fromPref?`<br>📍 ${course._fromPref}`:'';
+  const popup=`<div class="map-popup-title">${course.name}</div>
+    <div class="map-popup-meta">${category}・${course.difficulty}${fromPref}<br>⏱️${course.time}・📏${course.elevation}<br>📅${course.season}</div>
+    <div class="map-popup-season">${sl}</div>`;
+  markerLayer.addLayer(L.marker([loc.lat,loc.lng],{icon}).bindPopup(popup,{maxWidth:250}));
 }
 </script>
 </body>
