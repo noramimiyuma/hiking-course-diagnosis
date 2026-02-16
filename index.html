@@ -335,9 +335,9 @@ function addLayerControl(map){
     options:{position:'topleft'},
     onAdd:function(){
       const d=L.DomUtil.create('div','gmap-layer-ctrl');
-      d.innerHTML='<button class="gmap-layer-btn active" data-layer="terrain">🗻 地形</button><button class="gmap-layer-btn" data-layer="standard">🗺️ 地図</button><button class="gmap-layer-btn" data-layer="satellite">🛰️ 衛星</button>';
+      d.innerHTML='<button class="gmap-layer-btn" data-layer="terrain">🗻 地形</button><button class="gmap-layer-btn" data-layer="standard">🗺️ 地図</button><button class="gmap-layer-btn active" data-layer="satellite">🛰️ 衛星</button>';
       L.DomEvent.disableClickPropagation(d);L.DomEvent.disableScrollPropagation(d);
-      let cur=L.tileLayer(TILE_LAYERS.terrain.url,TILE_LAYERS.terrain.opts).addTo(map);
+      let cur=L.tileLayer(TILE_LAYERS.satellite.url,TILE_LAYERS.satellite.opts).addTo(map);
       d.addEventListener('click',e=>{
         const b=e.target.closest('.gmap-layer-btn');if(!b)return;
         const k=b.dataset.layer;if(!TILE_LAYERS[k])return;
@@ -443,9 +443,11 @@ function createMarker(c,color){
   const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':ss===1?'✅ 今月OK':'⏸️ シーズン外';
   const reason=seasonReason(c,ss);
   const prefStr=Array.isArray(c.pref)?c.pref.join('・'):c.pref;
+  const searchUrl=`https://www.google.com/search?q=${encodeURIComponent(c.name)}`;
   const popup=`<div class="map-popup-title">${course_season_icon(ss)} ${c.name}</div>
     <div class="map-popup-meta">${catLabel}・${c.difficulty}<br>📍 ${prefStr}<br>⏱️ ${c.time}・📏 ${c.elevation}<br>📅 ${c.season}</div>
-    <div class="map-popup-season">${sl}${reason}</div>`;
+    <div class="map-popup-season">${sl}${reason}</div>
+    <a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a>`;
   const marker=L.marker([loc.lat,loc.lng],{icon,zIndexOffset:isSeason?1000:0}).bindPopup(popup,{maxWidth:260});
   marker.on('popupopen',()=>highlightCard(c.name));
   marker.on('popupclose',()=>unhighlightCard(c.name));
