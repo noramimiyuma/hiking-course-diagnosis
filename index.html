@@ -435,9 +435,10 @@ function createMarker(c,color){
   const ss=getSeasonScore(c);
   const isSeason=ss>=2;
   const sz=isSeason?18:12;
+  const seasonLabel=ss===3?(getHighlightText(c)||'🔥今が旬'):ss===2?'✨ベストシーズン':'';
   const icon=L.divIcon({className:'',
     html:isSeason
-      ?`<div class="marker-season" style="position:relative;width:${sz}px;height:${sz}px"><div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px"></div><div class="marker-season-label">🔥旬</div></div>`
+      ?`<div class="marker-season" style="position:relative;width:${sz}px;height:${sz}px"><div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px"></div><div class="marker-season-label">${seasonLabel}</div></div>`
       :`<div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px;opacity:${ss===1?0.85:0.5}"></div>`,
     iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
   const catLabel=c._category==="niche"?"穴場":c._category==="stroll"?"散策路":"定番";
