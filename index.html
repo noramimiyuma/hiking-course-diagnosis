@@ -212,9 +212,7 @@
           <div class="filter-btns">
             <button class="fbtn active" data-val="all" onclick="handleFilter(this,'equipment')">すべて</button>
             <button class="fbtn" data-val="casual" onclick="handleFilter(this,'equipment')">👟 私服で歩ける</button>
-            <button class="fbtn" data-val="sneakers" onclick="handleFilter(this,'equipment')">👟 スニーカーOK</button>
             <button class="fbtn" data-val="hiking" onclick="handleFilter(this,'equipment')">🥾 登山装備が必要</button>
-            <button class="fbtn" data-val="full" onclick="handleFilter(this,'equipment')">⛏️ 本格装備</button>
           </div>
         </div>
         <div class="filter-group">
@@ -298,8 +296,8 @@ let activeFilters={equipment:"all",duration:"all"};
 let sidebarState="landing";
 
 // ============ EQUIPMENT & DURATION MAPPING ============
-const EQUIPMENT_MAP={"散策":"casual","入門":"sneakers","初級":"hiking","中級":"hiking","中級〜上級":"full","上級":"full","エキスパート":"full"};
-const EQ_LABELS={casual:"私服OK",sneakers:"スニーカーOK",hiking:"登山装備",full:"本格装備"};
+const EQUIPMENT_MAP={"散策":"casual","入門":"casual","初級":"hiking","中級":"hiking","中級〜上級":"hiking","上級":"hiking","エキスパート":"hiking"};
+const EQ_LABELS={casual:"私服OK",hiking:"登山装備"};
 const CAT_COLORS={popular:"#2d6a4f",niche:"#7b1fa2",stroll:"#00796b"};
 
 function getEquipmentCategory(diff){return EQUIPMENT_MAP[diff]||"hiking";}
