@@ -116,9 +116,10 @@
     .popup-bm-btn.saved{background:#e8f5e9;border-color:#2d6a4f;color:#1b4332}
     .popup-bm-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0}
     .popup-bm-btn.saved svg{fill:#2d6a4f;stroke:#2d6a4f}
-    /* bookmarked marker ring */
-    .bm-marker-ring{position:absolute;top:50%;left:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2.5px solid #2d6a4f;background:transparent;pointer-events:none}
+    /* bookmarked marker badge */
     .bm-marker-wrap{pointer-events:none}
+    .bm-marker-badge{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:18px;height:18px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+    .bm-marker-badge svg{width:18px;height:18px;fill:#ff6f00;stroke:#fff;stroke-width:1.5}
 
     /* ========== MAP LEGEND (on map) ========== */
     .map-legend-ctrl{display:flex;gap:8px;background:#fff;padding:6px 10px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.2);font-size:11px;color:#555}
@@ -840,8 +841,8 @@ function createMarker(c,color){
   }
   const bm=isBookmarked(c.name);
   const marker=L.circleMarker([loc.lat,loc.lng],{
-    radius:bm?7:r,fillColor:color,color:bm?'#2d6a4f':isSeason?'#ff6f00':'#fff',
-    weight:bm?2.5:isSeason?2:1.5,fillOpacity:0.9,opacity:1
+    radius:r,fillColor:color,color:isSeason?'#ff6f00':'#fff',
+    weight:isSeason?2:1.5,fillOpacity:0.9,opacity:1
   }).bindPopup(buildPopupHtml,{maxWidth:260});
   if(isSeason){
     const seasonLabel=ss===3?(getHighlightText(c)||'🔥今が旬'):'✨ベストシーズン';
@@ -856,12 +857,12 @@ function createMarker(c,color){
       seasonPulseLayer.addLayer(L.marker([loc.lat,loc.lng],{icon:pulseIcon,interactive:false}));
     }
   }
-  /* bookmark ring overlay */
+  /* bookmark badge overlay */
   if(bm&&bookmarkRingLayer){
     const bmIcon=L.divIcon({
       className:'bm-marker-wrap',
-      html:'<div class="bm-marker-ring"></div>',
-      iconSize:[20,20],iconAnchor:[10,10]
+      html:'<div class="bm-marker-badge"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></div>',
+      iconSize:[18,26],iconAnchor:[9,26]
     });
     bookmarkRingLayer.addLayer(L.marker([loc.lat,loc.lng],{icon:bmIcon,interactive:false}));
   }
