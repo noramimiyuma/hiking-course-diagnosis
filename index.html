@@ -753,6 +753,9 @@ function applyFilters(){
 
 function updateVisibleMarkers(){
   if(!markerLayer||!mainMap||sidebarState==='result')return;
+  /* remember which popup is open */
+  let openPopupName=null;
+  courseMarkerMap.forEach((mk,name)=>{if(mk.isPopupOpen&&mk.isPopupOpen())openPopupName=name;});
   markerLayer.clearLayers();
   courseMarkerMap.clear();
   const bounds=mainMap.getBounds().pad(0.3);
@@ -764,6 +767,12 @@ function updateVisibleMarkers(){
     markerLayer.addLayer(marker);
     courseMarkerMap.set(c.name,marker);
   });
+  /* restore popup */
+  const target=openPopupName||_pendingPopupName;
+  if(target){
+    const mk=courseMarkerMap.get(target);
+    if(mk) mk.openPopup();
+  }
 }
 
 function createMarker(c,color){
@@ -866,19 +875,23 @@ function renderCourseList(courses){
   if(courses.length>80) el.innerHTML+=`<div class="sb-more">地図を拡大すると更にコースが表示されます</div>`;
 }
 
+let _pendingPopupName=null;
 function panToMarker(name){
-  const m=courseMarkerMap.get(name);
-  if(m&&mainMap){mainMap.setView(m.getLatLng(),12,{animate:true});setTimeout(()=>m.openPopup(),300);return;}
-  // Marker not in viewport yet — find location and pan, then open popup after markers update
+  _pendingPopupName=name;
   const c=filteredCourses.find(x=>x.name===name)||getAllCourses().find(x=>x.name===name);
   if(!c||!mainMap)return;
   const loc=getCourseLocation(c);if(!loc)return;
+  mainMap.setView([loc.lat,loc.lng],12,{animate:true});
+  /* open popup after all moveend/updateVisibleMarkers settle */
+  const tryOpen=()=>{
+    const mk=courseMarkerMap.get(name);
+    if(mk){mk.openPopup();_pendingPopupName=null;}
+  };
   mainMap.once('moveend',()=>{
     clearTimeout(visibleUpdateTimer);
     updateVisibleMarkers();
-    setTimeout(()=>{const mk=courseMarkerMap.get(name);if(mk)mk.openPopup();},100);
+    setTimeout(tryOpen,50);
   });
-  mainMap.setView([loc.lat,loc.lng],12,{animate:true});
 }
 function highlightCard(name){
   document.querySelectorAll('.sb-ccard').forEach(el=>el.classList.toggle('highlighted',el.dataset.course===name));
