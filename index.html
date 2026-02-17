@@ -345,7 +345,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217t"></script>
+<script src="mountains.js?v=20260217u"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
@@ -442,9 +442,9 @@ function toggleGeoLocation(){
     applyFilters();
   },err=>{
     btn.classList.remove('geo-loading');btn.classList.add('geo-error');
-    const msgs={1:'位置情報が許可されていません',2:'位置を特定できませんでした',3:'位置情報の取得がタイムアウトしました'};
-    geoToast(msgs[err.code]||'位置情報の取得に失敗しました');
-    setTimeout(()=>btn.classList.remove('geo-error'),4000);
+    console.error('[Geolocation]',{code:err.code,message:err.message,PERMISSION_DENIED:err.PERMISSION_DENIED,POSITION_UNAVAILABLE:err.POSITION_UNAVAILABLE,TIMEOUT:err.TIMEOUT});
+    geoToast(`エラー code:${err.code} — ${err.message}`);
+    setTimeout(()=>btn.classList.remove('geo-error'),6000);
   },{enableHighAccuracy:true,timeout:30000,maximumAge:600000});
 }
 
