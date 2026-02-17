@@ -435,9 +435,10 @@ function toggleGeoLocation(){
     applyFilters();
   },err=>{
     btn.disabled=false;btn.classList.add('geo-error');
-    btn.textContent=err.code===1?'📍 位置情報が許可されていません':'📍 取得に失敗しました';
-    setTimeout(()=>{btn.textContent='📍 現在地から探す';btn.classList.remove('geo-error');},3000);
-  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+    const msgs={1:'📍 位置情報が許可されていません',2:'📍 位置を特定できませんでした',3:'📍 取得がタイムアウトしました'};
+    btn.textContent=msgs[err.code]||'📍 取得に失敗しました';
+    setTimeout(()=>{btn.textContent='📍 現在地から探す';btn.classList.remove('geo-error');},4000);
+  },{enableHighAccuracy:true,timeout:30000,maximumAge:600000});
 }
 
 function parseDurationHours(t){
