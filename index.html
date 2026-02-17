@@ -296,9 +296,8 @@
           <label class="filter-label">所要時間</label>
           <div class="filter-btns">
             <button class="fbtn active" data-val="all" onclick="handleFilter(this,'duration')">すべて</button>
-            <button class="fbtn" data-val="under1h" onclick="handleFilter(this,'duration')">〜1時間</button>
-            <button class="fbtn" data-val="1to3h" onclick="handleFilter(this,'duration')">1〜3時間</button>
-            <button class="fbtn" data-val="3to5h" onclick="handleFilter(this,'duration')">3〜5時間</button>
+            <button class="fbtn" data-val="under2h" onclick="handleFilter(this,'duration')">〜2時間</button>
+            <button class="fbtn" data-val="2to5h" onclick="handleFilter(this,'duration')">2〜5時間</button>
             <button class="fbtn" data-val="halfday" onclick="handleFilter(this,'duration')">半日以上</button>
             <button class="fbtn" data-val="overnight" onclick="handleFilter(this,'duration')">1泊以上</button>
           </div>
@@ -396,9 +395,8 @@ function getDurationCategory(t){
   const h=parseDurationHours(t);
   if(h===null) return "unknown";
   if(h===Infinity) return "overnight";
-  if(h<=1) return "under1h";
-  if(h<=3) return "1to3h";
-  if(h<=5) return "3to5h";
+  if(h<=2) return "under2h";
+  if(h<=5) return "2to5h";
   return "halfday";
 }
 
