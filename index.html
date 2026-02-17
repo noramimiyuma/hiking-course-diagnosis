@@ -187,7 +187,9 @@
     .map-popup-title{font-size:14px;font-weight:700;color:#1b4332;margin-bottom:4px}
     .map-popup-meta{font-size:12px;color:#666;line-height:1.5}
     .map-popup-season{font-size:11px;margin-top:4px}
-    /* markers now use L.circleMarker (canvas) — no DOM styles needed */
+    /* season tooltip on circleMarkers */
+    .season-tip{background:linear-gradient(135deg,#ff6f00,#ff8f00);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;border:none;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap;pointer-events:none}
+    .season-tip::before{border-top-color:#ff8f00}
 
     /* ========== MOBILE (bottom sheet) ========== */
     @media(max-width:768px){
@@ -332,7 +334,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217n"></script>
+<script src="mountains.js?v=20260217o"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
@@ -594,6 +596,10 @@ function createMarker(c,color){
     radius:r,fillColor:color,color:isSeason?'#ff6f00':'#fff',
     weight:isSeason?2:1.5,fillOpacity:0.9,opacity:1
   }).bindPopup(popup,{maxWidth:260});
+  if(isSeason){
+    const seasonLabel=ss===3?(getHighlightText(c)||'🔥今が旬'):'✨ベストシーズン';
+    marker.bindTooltip(seasonLabel,{permanent:true,direction:'top',offset:[0,-8],className:'season-tip'});
+  }
   marker.on('popupopen',()=>highlightCard(c.name));
   marker.on('popupclose',()=>unhighlightCard(c.name));
   return marker;
