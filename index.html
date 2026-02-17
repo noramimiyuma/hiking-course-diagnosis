@@ -21,10 +21,10 @@
     .sidebar-title{font-size:15px;font-weight:700;flex:1}
     .sidebar-toggle{background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:background .2s}
     .sidebar-toggle:hover{background:rgba(255,255,255,.35)}
-    .sidebar-drag{display:none}
+    .sidebar-drag{display:none;-webkit-user-select:none;user-select:none}
     .sidebar-body{flex:1;overflow-y:auto;overflow-x:hidden}
     /* sidebar re-open button on map */
-    .sidebar-reopen{position:fixed;top:12px;left:12px;z-index:20;background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none}
+    .sidebar-reopen{position:fixed;top:60px;left:12px;z-index:20;background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none}
 
     /* ========== SIDEBAR VIEWS ========== */
     .sb-view{padding:16px;animation:fadeIn .25s ease}
@@ -197,9 +197,10 @@
     @media(max-width:768px){
       body{flex-direction:column;position:relative}
       #main-map{width:100%;height:100vh;position:fixed;top:0;left:0}
-      .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:auto;max-height:80vh;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);z-index:100;transition:transform .3s ease;transform:translateY(0)}
-      .sidebar.collapsed{transform:translateY(calc(100% - 56px))}
-      .sidebar-drag{display:block;width:40px;height:4px;background:#ccc;border-radius:2px;margin:8px auto 0;flex-shrink:0}
+      .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:auto;max-height:80vh;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);z-index:100;transition:transform .3s ease;transform:translateY(0);margin-left:0}
+      .sidebar.collapsed{transform:translateY(calc(100% - 48px));margin-left:0}
+      .sidebar-drag{display:flex;align-items:center;justify-content:center;width:100%;height:44px;flex-shrink:0;cursor:grab;touch-action:none}
+      .sidebar-drag::after{content:'';display:block;width:48px;height:5px;background:#aaa;border-radius:3px}
       .sidebar-toggle{display:none}
       .sidebar-reopen{display:none!important}
       .gmap-layer-btn{padding:5px 10px;font-size:11px}
@@ -335,7 +336,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217k"></script>
+<script src="mountains.js?v=20260217l"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
@@ -689,22 +690,31 @@ function setupMobile(){
   const handle=document.getElementById('drag-handle');
   const sb=document.getElementById('sidebar');
   if(!handle) return;
-  let startY=0,startT=0;
-  handle.addEventListener('touchstart',e=>{
+  let startY=0,startT=0,dragging=false;
+  function onTouchStart(e){
     startY=e.touches[0].clientY;
     const st=getComputedStyle(sb).transform;
-    const mx=new DOMMatrix(st);startT=mx.m42||0;
-    sb.style.transition='none';
-  });
-  handle.addEventListener('touchmove',e=>{
+    const mx=new DOMMatrix(st==='none'?'':st);startT=mx.m42||0;
+    sb.style.transition='none';dragging=true;
+  }
+  function onTouchMove(e){
+    if(!dragging)return;
     const dy=e.touches[0].clientY-startY;
     const ny=Math.max(0,startT+dy);
     sb.style.transform=`translateY(${ny}px)`;
-  });
-  handle.addEventListener('touchend',()=>{
+  }
+  function onTouchEnd(){
+    if(!dragging)return;dragging=false;
     sb.style.transition='transform .3s ease';
     const rect=sb.getBoundingClientRect();
     if(rect.top>window.innerHeight*0.5) collapseSidebar(); else expandSidebar();
+  }
+  handle.addEventListener('touchstart',onTouchStart,{passive:true});
+  handle.addEventListener('touchmove',onTouchMove,{passive:true});
+  handle.addEventListener('touchend',onTouchEnd);
+  // Tap on handle while collapsed → expand
+  handle.addEventListener('click',()=>{
+    if(sb.classList.contains('collapsed')) expandSidebar();
   });
 }
 function collapseSidebar(){
