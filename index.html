@@ -98,7 +98,21 @@
     .sb-ccard-b{padding:6px 10px;font-size:11px;color:#666;display:flex;gap:8px;flex-wrap:wrap}
     .sb-ccard-b span{white-space:nowrap}
     .sb-ccard-desc{padding:4px 10px 7px;font-size:11px;color:#555;line-height:1.5;border-top:1px solid #eee}
+    .sb-ccard-bm{background:none;border:none;cursor:pointer;font-size:16px;line-height:1;padding:2px;flex-shrink:0;transition:transform .15s;color:rgba(255,255,255,.55);-webkit-user-select:none;user-select:none}
+    .sb-ccard-bm:active{transform:scale(1.3)}
+    .sb-ccard-bm.saved{color:#ff6b81}
     .sb-more{text-align:center;color:#999;font-size:11px;padding:10px}
+    /* bookmark toggle tab */
+    .sb-bm-bar{padding:8px 16px 0;display:flex;align-items:center;gap:6px}
+    .sb-bm-toggle{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:18px;border:1.5px solid #e8ede8;background:#fff;font-size:12px;font-weight:600;color:#888;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none}
+    .sb-bm-toggle:hover{border-color:#ff6b81;color:#ff6b81}
+    .sb-bm-toggle.active{background:#fff0f3;border-color:#ff6b81;color:#e84057}
+    .sb-bm-count{font-size:10px;background:#ff6b81;color:#fff;border-radius:10px;padding:1px 6px;font-weight:700;min-width:16px;text-align:center}
+    .sb-bm-empty{text-align:center;color:#aaa;font-size:13px;padding:30px 16px;line-height:1.7}
+    /* popup bookmark button */
+    .popup-bm-btn{display:inline-block;margin-top:6px;margin-left:6px;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#555;transition:all .15s;vertical-align:top}
+    .popup-bm-btn:hover{border-color:#ff6b81;color:#ff6b81}
+    .popup-bm-btn.saved{background:#fff0f3;border-color:#ff6b81;color:#e84057}
 
     /* ========== MAP LEGEND (on map) ========== */
     .map-legend-ctrl{display:flex;gap:8px;background:#fff;padding:6px 10px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.2);font-size:11px;color:#555}
@@ -288,6 +302,9 @@
           <input type="text" id="search-input" placeholder="コース名・見どころで検索…" oninput="onSearchInput(this.value)">
           <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
         </div>
+      </div>
+      <div class="sb-bm-bar" id="sb-bm-bar">
+        <button class="sb-bm-toggle" id="sb-bm-toggle" onclick="toggleBookmarkView()">♥ ブックマーク <span class="sb-bm-count" id="sb-bm-count">0</span></button>
       </div>
       <div class="sb-presets" id="sb-presets">
         <div class="preset-cat">
@@ -608,6 +625,7 @@ function initApp(){
   initMainMap();
   applyFilters();
   setupMobile();
+  updateBookmarkBadge();
   window.addEventListener('resize',()=>{if(mainMap)mainMap.invalidateSize();});
 }
 
@@ -743,6 +761,15 @@ function handleFilter(btn,group){
 
 function applyFilters(){
   if(!markerLayer)return;
+  /* exit bookmark mode if active */
+  if(bookmarkMode){
+    bookmarkMode=false;
+    const toggle=document.getElementById('sb-bm-toggle');
+    if(toggle) toggle.classList.remove('active');
+    document.getElementById('sb-presets').classList.remove('hidden');
+    document.querySelector('.sb-filters').classList.remove('hidden');
+    document.getElementById('filter-count').classList.remove('hidden');
+  }
   const courses=getAllCourses();
   const{equipment,duration}=activeFilters;
   filteredCourses=[];
@@ -794,11 +821,13 @@ function createMarker(c,color){
   const prefStr=Array.isArray(c.pref)?c.pref.join('・'):c.pref;
   const searchUrl=`https://www.google.com/search?q=${encodeURIComponent(c.name)}`;
   const desc=c.description||'';
+  const nmEsc=c.name.replace(/'/g,"\\'");
+  const bmSaved=isBookmarked(c.name);
   const popup=`<div class="map-popup-title">${course_season_icon(ss)} ${c.name}</div>
     <div class="map-popup-meta">${catLabel}・${c.difficulty}<br>📍 ${prefStr}<br>⏱️ ${c.time}・📏 ${c.elevation}<br>📅 ${c.season}</div>
     ${desc?`<div style="font-size:11px;color:#444;line-height:1.5;margin-top:4px;border-top:1px solid #eee;padding-top:4px">📝 ${desc}</div>`:''}
     ${(sl||reason)?`<div class="map-popup-season">${sl}${reason}</div>`:''}
-    <a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a>`;
+    <a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a><button class="popup-bm-btn${bmSaved?' saved':''}" data-course="${c.name}" onclick="toggleBookmarkFromPopup('${nmEsc}')">${bmSaved?'♥ 保存済み':'♡ 保存'}</button>`;
   const marker=L.circleMarker([loc.lat,loc.lng],{
     radius:r,fillColor:color,color:isSeason?'#ff6f00':'#fff',
     weight:isSeason?2:1.5,fillOpacity:0.9,opacity:1
@@ -827,6 +856,71 @@ function seasonReason(c,ss){
   if(ss===3){const hl=getHighlightText(c);return hl?`<br><span style="color:#e65100;font-weight:600">💡 ${hl}</span>`:''}
   if(ss===2) return `<br><span style="color:#2e7d32;font-weight:600">💡 シーズン（${c.season}）の見頃時期です</span>`;
   return '';
+}
+
+// ============ BOOKMARKS ============
+let bookmarkMode=false;
+function getBookmarks(){try{return JSON.parse(localStorage.getItem('bookmarks'))||[];}catch(e){return [];}}
+function saveBookmarks(arr){localStorage.setItem('bookmarks',JSON.stringify(arr));}
+function isBookmarked(name){return getBookmarks().includes(name);}
+function toggleBookmark(name){
+  const bm=getBookmarks();
+  const idx=bm.indexOf(name);
+  if(idx===-1) bm.push(name); else bm.splice(idx,1);
+  saveBookmarks(bm);
+  updateBookmarkUI(name);
+  updateBookmarkBadge();
+  /* if in bookmark view and just removed, re-render */
+  if(bookmarkMode) renderBookmarkList();
+}
+function updateBookmarkUI(name){
+  const saved=isBookmarked(name);
+  /* update cards */
+  document.querySelectorAll(`.sb-ccard[data-course="${CSS.escape(name)}"] .sb-ccard-bm`).forEach(b=>{
+    b.textContent=saved?'♥':'♡';
+    b.classList.toggle('saved',saved);
+  });
+  /* update popup buttons */
+  document.querySelectorAll('.popup-bm-btn').forEach(btn=>{
+    if(btn.dataset.course===name){
+      btn.textContent=saved?'♥ 保存済み':'♡ 保存';
+      btn.classList.toggle('saved',saved);
+    }
+  });
+}
+function updateBookmarkBadge(){
+  const ct=getBookmarks().length;
+  const badge=document.getElementById('sb-bm-count');
+  if(badge) badge.textContent=ct;
+}
+/* called from popup via global */
+window.toggleBookmarkFromPopup=function(name){toggleBookmark(name);};
+
+function toggleBookmarkView(){
+  bookmarkMode=!bookmarkMode;
+  const toggle=document.getElementById('sb-bm-toggle');
+  if(toggle) toggle.classList.toggle('active',bookmarkMode);
+  if(bookmarkMode){
+    renderBookmarkList();
+    document.getElementById('sb-presets').classList.add('hidden');
+    document.querySelector('.sb-filters').classList.add('hidden');
+    document.getElementById('filter-count').classList.add('hidden');
+  } else {
+    document.getElementById('sb-presets').classList.remove('hidden');
+    document.querySelector('.sb-filters').classList.remove('hidden');
+    document.getElementById('filter-count').classList.remove('hidden');
+    renderCourseList(filteredCourses);
+  }
+}
+function renderBookmarkList(){
+  const el=document.getElementById('sb-course-list');if(!el)return;
+  const bm=getBookmarks();
+  if(!bm.length){el.innerHTML='<div class="sb-bm-empty">♡<br>まだブックマークがありません<br><span style="font-size:11px;color:#bbb">気になるコースのハートをタップして保存しましょう</span></div>';return;}
+  const allC=getAllCourses();
+  const courses=bm.map(n=>allC.find(c=>c.name===n)).filter(Boolean);
+  renderCourseList(courses);
+  /* force bookmark mode stays true (renderCourseList might have been called) */
+  bookmarkMode=true;
 }
 
 // ============ COURSE LIST ============
@@ -876,10 +970,12 @@ function renderCourseList(courses){
       const km=haversineKm(userLocation.lat,userLocation.lng,loc.lat,loc.lng);
       distHtml=`<span class="sb-ccard-dist">📍 ${formatDist(km)}</span>`;
     }
+    const bmSaved=isBookmarked(c.name);
     return `<div class="sb-ccard" data-course="${c.name}" onclick="panToMarker('${nm}')">
       <div class="sb-ccard-h" style="background:${color}">
         <h4>${course_season_icon(ss)} ${c.name}</h4>
         <span class="eq-tag">${eqL}</span>
+        <button class="sb-ccard-bm${bmSaved?' saved':''}" onclick="event.stopPropagation();toggleBookmark('${nm}')">${bmSaved?'♥':'♡'}</button>
       </div>
       <div class="sb-ccard-b">
         ${distHtml}<span>⏱️ ${c.time}</span><span>📏 ${c.elevation}</span><span>📅 ${c.season}</span>
