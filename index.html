@@ -53,7 +53,6 @@
     /* ========== SEARCH ========== */
     .sb-search{padding:10px 16px;border-bottom:1px solid #e8ede8}
     .search-box{display:flex;align-items:center;gap:6px;background:#f5f7f5;border:1.5px solid #dce4dc;border-radius:8px;padding:7px 10px;transition:border-color .2s}
-    .leaflet-bar a{width:40px!important;height:40px!important;line-height:1!important;font-size:18px!important;display:flex!important;align-items:center!important;justify-content:center!important}
     .geo-ctrl{background:#fff;width:40px;height:40px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-size:20px;line-height:1;color:#666;transition:all .2s;padding:0}
     .geo-ctrl:hover{background:#f0f0f0;color:#333}
     .geo-ctrl.geo-active{color:#1565c0}
@@ -214,28 +213,39 @@
     @media(max-width:768px){
       body{flex-direction:column;position:relative}
       #main-map{width:100%;height:100vh;position:fixed;top:0;left:0}
-      .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:90vh;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);z-index:100;transition:transform .35s cubic-bezier(.2,.9,.3,1);margin-left:0}
+      .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:90vh;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);z-index:100;transition:transform .35s cubic-bezier(.2,.9,.3,1);margin-left:0;overflow:hidden}
       .sidebar-drag{display:flex;align-items:center;justify-content:center;width:100%;height:44px;flex-shrink:0;cursor:grab;touch-action:none}
       .sidebar-drag::after{content:'';display:block;width:48px;height:5px;background:#aaa;border-radius:3px}
       .sidebar-header{display:none}
       .sidebar-reopen{display:none!important}
-      .gmap-layer-btn{padding:5px 10px;font-size:11px}
+      .leaflet-control-zoom{display:none!important}
+      .gmap-layer-ctrl{display:none!important}
       .pref-grid{grid-template-columns:repeat(auto-fill,minmax(52px,1fr))}
       .pref-btn{padding:6px 2px;font-size:10px}
       .mobile-fab{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:50;background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;font-size:14px;font-weight:600;padding:12px 24px;border:none;border-radius:30px;box-shadow:0 4px 16px rgba(27,67,50,.4);cursor:pointer}
       .sb-presets{display:none!important}
       .leaflet-bottom.leaflet-right{transition:bottom .35s cubic-bezier(.2,.9,.3,1)}
-      /* map preset chips */
-      .map-preset-bar{position:fixed;left:0;right:0;z-index:99;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:6px 10px;display:flex;gap:6px;white-space:nowrap;scrollbar-width:none;pointer-events:auto;transition:bottom .35s cubic-bezier(.2,.9,.3,1)}
+      /* map preset chips — fixed at top */
+      .map-preset-bar{position:fixed;top:0;left:0;right:0;z-index:99;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:8px 10px;display:flex;gap:7px;white-space:nowrap;scrollbar-width:none;pointer-events:auto;background:linear-gradient(180deg,rgba(0,0,0,.18) 0%,transparent 100%)}
       .map-preset-bar::-webkit-scrollbar{display:none}
-      .map-preset-chip{flex-shrink:0;padding:6px 12px;border-radius:18px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1.5px solid rgba(0,0,0,.12);font-size:12px;font-weight:500;color:#333;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15);transition:all .15s;user-select:none;-webkit-user-select:none}
+      .map-preset-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1.5px solid rgba(0,0,0,.08);font-size:13px;font-weight:500;color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.13);transition:all .15s;user-select:none;-webkit-user-select:none}
       .map-preset-chip:active{transform:scale(.95)}
       .map-preset-chip.active{background:#1b4332;color:#fff;border-color:#1b4332;box-shadow:0 2px 8px rgba(27,67,50,.35)}
-      .map-preset-sep{flex-shrink:0;width:1px;background:rgba(0,0,0,.1);margin:4px 0;align-self:stretch}
+      .map-preset-sep{flex-shrink:0;width:1px;background:rgba(255,255,255,.4);margin:4px 0;align-self:stretch}
+      /* mobile layer toggle */
+      .mob-layer-toggle{background:#fff;width:40px;height:40px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:#666;padding:0;position:relative}
+      .mob-layer-toggle:hover{background:#f0f0f0}
+      .mob-layer-balloon{position:absolute;bottom:48px;right:0;background:#fff;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.25);padding:6px;display:flex;flex-direction:column;gap:4px;opacity:0;pointer-events:none;transform:translateY(8px) scale(.95);transition:all .2s ease}
+      .mob-layer-balloon.show{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+      .mob-layer-balloon::after{content:'';position:absolute;bottom:-6px;right:12px;width:12px;height:12px;background:#fff;transform:rotate(45deg);box-shadow:2px 2px 4px rgba(0,0,0,.08)}
+      .mob-layer-opt{padding:8px 14px;border:none;border-radius:6px;background:transparent;font-size:12px;font-weight:600;color:#444;cursor:pointer;white-space:nowrap;text-align:left;transition:background .15s}
+      .mob-layer-opt:active{background:#f0f0f0}
+      .mob-layer-opt.active{background:#e8f5e9;color:#1b4332}
     }
     @media(min-width:769px){
       .mobile-fab{display:none!important}
       .map-preset-bar{display:none!important}
+      .mob-layer-toggle{display:none!important}
     }
   </style>
 </head>
@@ -527,11 +537,19 @@ function addLayerControl(map){
       d.innerHTML='<button class="gmap-layer-btn" data-layer="terrain">🗻 地形</button><button class="gmap-layer-btn" data-layer="standard">🗺️ 地図</button><button class="gmap-layer-btn active" data-layer="satellite">🛰️ 衛星</button>';
       L.DomEvent.disableClickPropagation(d);L.DomEvent.disableScrollPropagation(d);
       let cur=L.tileLayer(TILE_LAYERS.satellite.url,TILE_LAYERS.satellite.opts).addTo(map);
+      function switchTo(k){
+        if(!TILE_LAYERS[k])return;
+        d.querySelectorAll('.gmap-layer-btn').forEach(x=>x.classList.remove('active'));
+        const ab=d.querySelector(`[data-layer="${k}"]`);if(ab)ab.classList.add('active');
+        map.removeLayer(cur);cur=L.tileLayer(TILE_LAYERS[k].url,TILE_LAYERS[k].opts).addTo(map);cur.bringToBack();
+      }
+      window._switchTileLayer=switchTo;
       d.addEventListener('click',e=>{
         const b=e.target.closest('.gmap-layer-btn');if(!b)return;
-        const k=b.dataset.layer;if(!TILE_LAYERS[k])return;
-        d.querySelectorAll('.gmap-layer-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-        map.removeLayer(cur);cur=L.tileLayer(TILE_LAYERS[k].url,TILE_LAYERS[k].opts).addTo(map);cur.bringToBack();
+        switchTo(b.dataset.layer);
+        /* sync mobile balloon */
+        document.querySelectorAll('.mob-layer-opt').forEach(x=>x.classList.remove('active'));
+        const mb=document.querySelector(`.mob-layer-opt[data-layer="${b.dataset.layer}"]`);if(mb)mb.classList.add('active');
       });
       return d;
     }
@@ -584,7 +602,6 @@ function initApp(){
 function initMainMap(){
   const canvasRenderer=L.canvas({padding:0.5});
   mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true}).setView([36.2,138.25],5);
-  L.control.zoom({position:'bottomright'}).addTo(mainMap);
   addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
@@ -598,17 +615,44 @@ function addGeoControl(map){
   const C=L.Control.extend({
     options:{position:'bottomright'},
     onAdd(){
-      const btn=L.DomUtil.create('button','geo-ctrl');
+      const wrap=L.DomUtil.create('div','');
+      wrap.style.cssText='display:flex;flex-direction:column;align-items:flex-end;gap:8px';
+      /* mobile layer toggle */
+      const layerWrap=L.DomUtil.create('div','mob-layer-toggle',wrap);
+      layerWrap.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 12 2 23 6 12 10"/><polyline points="1 6 1 12 12 16 23 12 23 6"/><polyline points="1 12 1 18 12 22 23 18 23 12"/></svg><div class="mob-layer-balloon" id="mob-layer-balloon"><button class="mob-layer-opt" data-layer="terrain">🗻 地形</button><button class="mob-layer-opt" data-layer="standard">🗺️ 地図</button><button class="mob-layer-opt active" data-layer="satellite">🛰️ 衛星</button></div>';
+      L.DomEvent.disableClickPropagation(layerWrap);
+      layerWrap.querySelector('svg').addEventListener('click',e=>{
+        e.stopPropagation();
+        const bl=document.getElementById('mob-layer-balloon');
+        bl.classList.toggle('show');
+        /* close on outside tap */
+        if(bl.classList.contains('show')){
+          setTimeout(()=>{
+            const closer=ev=>{if(!layerWrap.contains(ev.target)){bl.classList.remove('show');document.removeEventListener('click',closer);}};
+            document.addEventListener('click',closer);
+          },10);
+        }
+      });
+      layerWrap.querySelector('.mob-layer-balloon').addEventListener('click',e=>{
+        const b=e.target.closest('.mob-layer-opt');if(!b)return;
+        const k=b.dataset.layer;if(!TILE_LAYERS[k])return;
+        layerWrap.querySelectorAll('.mob-layer-opt').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        /* sync with main layer control */
+        if(window._switchTileLayer) window._switchTileLayer(k);
+        document.getElementById('mob-layer-balloon').classList.remove('show');
+      });
+      /* geo button */
+      const btn=L.DomUtil.create('button','geo-ctrl',wrap);
       btn.id='geo-btn';
       btn.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>';
       btn.title='現在地を表示';
       L.DomEvent.disableClickPropagation(btn);
       L.DomEvent.on(btn,'click',toggleGeoLocation);
-      return btn;
+      return wrap;
     }
   });
   new C().addTo(map);
-  // toast element
   const toast=document.createElement('div');toast.className='geo-toast';toast.id='geo-toast';
   document.body.appendChild(toast);
 }
@@ -884,12 +928,8 @@ function updateMapControls(){
   const s=getSheetStops();
   const sheetVisibleH=sheetStop==='closed'?48:sheetStop==='peek'?s.peekH:s.sbH;
   const bottomPx=Math.max(8,sheetVisibleH+8);
-  /* move Leaflet controls above sheet */
   const ctr=document.querySelector('.leaflet-bottom.leaflet-right');
   if(ctr) ctr.style.bottom=sheetStop==='full'?'':bottomPx+'px';
-  /* move preset bar just above sheet */
-  const bar=document.getElementById('map-preset-bar');
-  if(bar) bar.style.bottom=sheetStop==='full'?'-60px':(sheetVisibleH+4)+'px';
 }
 function setupMobile(){
   const handle=document.getElementById('drag-handle');
@@ -906,8 +946,6 @@ function setupMobile(){
     sb.style.transition='none';dragging=true;
     const ctr=document.querySelector('.leaflet-bottom.leaflet-right');
     if(ctr)ctr.style.transition='none';
-    const bar=document.getElementById('map-preset-bar');
-    if(bar)bar.style.transition='none';
   }
   function onTouchMove(e){
     if(!dragging)return;
@@ -918,20 +956,16 @@ function setupMobile(){
     const dy=y-startY;
     const ny=Math.max(0,Math.min(getSheetStops().closed,startTy+dy));
     sb.style.transform=`translateY(${ny}px)`;
-    /* live-update controls */
+    /* live-update geo control position */
     const sheetTopNow=sb.getBoundingClientRect().top;
     const vh=window.innerHeight;
     const ctr=document.querySelector('.leaflet-bottom.leaflet-right');
     if(ctr) ctr.style.bottom=Math.max(8,vh-sheetTopNow+8)+'px';
-    const bar=document.getElementById('map-preset-bar');
-    if(bar) bar.style.bottom=(vh-sheetTopNow+4)+'px';
   }
   function onTouchEnd(){
     if(!dragging)return;dragging=false;
     const ctr=document.querySelector('.leaflet-bottom.leaflet-right');
     if(ctr)ctr.style.transition='bottom .35s cubic-bezier(.2,.9,.3,1)';
-    const bar=document.getElementById('map-preset-bar');
-    if(bar)bar.style.transition='bottom .35s cubic-bezier(.2,.9,.3,1)';
     const s=getSheetStops();
     const nowTy=curTy();
     const VTHRESH=0.35; /* px/ms — light flick threshold */
