@@ -199,7 +199,7 @@
       .sidebar.collapsed{transform:translateY(calc(100% - 48px));margin-left:0}
       .sidebar-drag{display:flex;align-items:center;justify-content:center;width:100%;height:44px;flex-shrink:0;cursor:grab;touch-action:none}
       .sidebar-drag::after{content:'';display:block;width:48px;height:5px;background:#aaa;border-radius:3px}
-      .sidebar-toggle{display:none}
+      .sidebar-header{display:none}
       .sidebar-reopen{display:none!important}
       .gmap-layer-btn{padding:5px 10px;font-size:11px}
       .pref-grid{grid-template-columns:repeat(auto-fill,minmax(52px,1fr))}
@@ -334,7 +334,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217o"></script>
+<script src="mountains.js?v=20260217p"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
