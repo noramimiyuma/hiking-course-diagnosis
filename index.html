@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>全国散策マップ — ハイキング・ウォーキングコース診断</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
@@ -212,8 +212,8 @@
     /* ========== MOBILE (bottom sheet) ========== */
     @media(max-width:768px){
       body{flex-direction:column;position:relative}
-      #main-map{width:100%;height:100vh;position:fixed;top:0;left:0}
-      .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:90vh;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);z-index:100;transition:transform .35s cubic-bezier(.2,.9,.3,1);margin-left:0;overflow:hidden}
+      #main-map{width:100%;height:100vh;height:100dvh;position:fixed;top:0;left:0}
+      .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:90vh;height:90dvh;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);z-index:100;transition:transform .35s cubic-bezier(.2,.9,.3,1);margin-left:0;overflow:hidden}
       .sidebar-drag{display:flex;align-items:center;justify-content:center;width:100%;height:44px;flex-shrink:0;cursor:grab;touch-action:none}
       .sidebar-drag::after{content:'';display:block;width:48px;height:5px;background:#aaa;border-radius:3px}
       .sidebar-header{display:none}
@@ -222,11 +222,11 @@
       .gmap-layer-ctrl{display:none!important}
       .pref-grid{grid-template-columns:repeat(auto-fill,minmax(52px,1fr))}
       .pref-btn{padding:6px 2px;font-size:10px}
-      .mobile-fab{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:50;background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;font-size:14px;font-weight:600;padding:12px 24px;border:none;border-radius:30px;box-shadow:0 4px 16px rgba(27,67,50,.4);cursor:pointer}
+      .mobile-fab{display:none!important}
       .sb-presets{display:none!important}
       .leaflet-bottom.leaflet-right{transition:bottom .35s cubic-bezier(.2,.9,.3,1)}
-      /* map preset chips — fixed at top */
-      .map-preset-bar{position:fixed;top:0;left:0;right:0;z-index:99;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:8px 10px;display:flex;gap:7px;white-space:nowrap;scrollbar-width:none;pointer-events:auto;background:linear-gradient(180deg,rgba(0,0,0,.18) 0%,transparent 100%)}
+      /* map preset chips — fixed at top below safe area */
+      .map-preset-bar{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:99;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:8px 10px;display:flex;gap:7px;white-space:nowrap;scrollbar-width:none;pointer-events:auto;background:linear-gradient(180deg,rgba(0,0,0,.18) 0%,transparent 100%)}
       .map-preset-bar::-webkit-scrollbar{display:none}
       .map-preset-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1.5px solid rgba(0,0,0,.08);font-size:13px;font-weight:500;color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.13);transition:all .15s;user-select:none;-webkit-user-select:none}
       .map-preset-chip:active{transform:scale(.95)}
@@ -243,7 +243,6 @@
       .mob-layer-opt.active{background:#e8f5e9;color:#1b4332}
     }
     @media(min-width:769px){
-      .mobile-fab{display:none!important}
       .map-preset-bar{display:none!important}
       .mob-layer-toggle{display:none!important}
     }
@@ -367,9 +366,6 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-
-<!-- MOBILE FAB (shown when sidebar collapsed on mobile) -->
-<button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="mountains.js?v=20260217u"></script>
@@ -907,7 +903,7 @@ function toggleSidebar(){
 let sheetStop='peek'; // 'closed','peek','full'
 function getSheetStops(){
   const vh=window.innerHeight;
-  const sbH=document.getElementById('sidebar').offsetHeight||vh*0.9;
+  const sbH=Math.round(vh*0.9);
   const peekH=Math.round(vh/3);
   return {closed:sbH-48, peek:sbH-peekH, full:0, sbH, vh, peekH};
 }
@@ -927,7 +923,7 @@ function updateMapControls(){
   if(window.innerWidth>768)return;
   const s=getSheetStops();
   const sheetVisibleH=sheetStop==='closed'?48:sheetStop==='peek'?s.peekH:s.sbH;
-  const bottomPx=Math.max(8,sheetVisibleH+8);
+  const bottomPx=Math.max(12,sheetVisibleH+16);
   const ctr=document.querySelector('.leaflet-bottom.leaflet-right');
   if(ctr) ctr.style.bottom=sheetStop==='full'?'':bottomPx+'px';
 }
@@ -960,7 +956,7 @@ function setupMobile(){
     const sheetTopNow=sb.getBoundingClientRect().top;
     const vh=window.innerHeight;
     const ctr=document.querySelector('.leaflet-bottom.leaflet-right');
-    if(ctr) ctr.style.bottom=Math.max(8,vh-sheetTopNow+8)+'px';
+    if(ctr) ctr.style.bottom=Math.max(12,vh-sheetTopNow+16)+'px';
   }
   function onTouchEnd(){
     if(!dragging)return;dragging=false;
@@ -998,10 +994,7 @@ function setupMobile(){
 }
 function collapseSidebar(){setSheetPosition('closed',true);}
 function expandSidebar(){setSheetPosition('full',true);}
-function updateFab(){
-  const fab=document.getElementById('mobile-fab');if(!fab)return;
-  fab.classList.toggle('hidden',!(window.innerWidth<=768&&sheetStop==='closed'&&sidebarState==='landing'));
-}
+function updateFab(){/* removed — fab no longer exists */}
 function buildMapPresetBar(){
   if(document.getElementById('map-preset-bar'))return;
   const presets=[
