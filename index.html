@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登山コース診断 — 全国コースマップ</title>
+  <title>全国散策マップ — ハイキング・ウォーキングコース診断</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -28,14 +28,16 @@
 
     /* ========== SIDEBAR VIEWS ========== */
     .sb-view{padding:16px;animation:fadeIn .25s ease}
+    #sb-landing{padding:0}
     .sb-view.hidden{display:none!important}
     @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
     /* ========== LANDING VIEW ========== */
-    .sb-hero{text-align:center;padding:16px 8px 12px;border-bottom:1px solid #e8ede8}
-    .sb-hero p{font-size:13px;color:#555;margin-bottom:12px;line-height:1.6}
-    .btn-diag{background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;border:none;padding:10px 24px;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 3px 10px rgba(27,67,50,.3);transition:all .2s}
-    .btn-diag:hover{box-shadow:0 4px 16px rgba(27,67,50,.45);transform:translateY(-1px)}
+    .sb-hero{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #e8ede8;background:linear-gradient(135deg,#f0faf4,#e8f5e9)}
+    .sb-hero-text{flex:1;font-size:11px;color:#555;line-height:1.5}
+    .sb-hero-text strong{color:#1b4332;font-size:12px}
+    .btn-diag{background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;border:none;padding:7px 14px;border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(27,67,50,.25);transition:all .2s;white-space:nowrap;flex-shrink:0}
+    .btn-diag:hover{box-shadow:0 3px 12px rgba(27,67,50,.4);transform:translateY(-1px)}
 
     /* ========== FILTERS ========== */
     .sb-filters{padding:14px 16px;border-bottom:1px solid #e8ede8}
@@ -216,8 +218,8 @@
 <div id="sidebar" class="sidebar">
   <div class="sidebar-drag" id="drag-handle"></div>
   <div class="sidebar-header">
-    <span style="font-size:18px">🏔️</span>
-    <span class="sidebar-title">登山コース診断</span>
+    <span style="font-size:18px">🗾</span>
+    <span class="sidebar-title">全国散策マップ</span>
     <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">◀</button>
   </div>
   <div class="sidebar-body" id="sidebar-body">
@@ -225,8 +227,8 @@
     <!-- LANDING VIEW -->
     <div id="sb-landing" class="sb-view">
       <div class="sb-hero">
-        <p>体力・経験・お住まいに合わせて<br>最適なコースをご提案します</p>
-        <button class="btn-diag" onclick="startQuiz()">📋 診断をはじめる</button>
+        <div class="sb-hero-text"><strong>あなたに合うコースは？</strong><br>体力・経験からおすすめを診断</div>
+        <button class="btn-diag" onclick="startQuiz()">📋 診断する</button>
       </div>
       <div class="sb-search">
         <div class="search-box">
@@ -332,7 +334,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217e"></script>
+<script src="mountains.js?v=20260217f"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
