@@ -132,7 +132,7 @@
     .card-h h3{font-size:14px;font-weight:700;flex:1}
     .diff-tag{font-size:10px;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;white-space:nowrap}
     .niche-b,.stroll-b{font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px}
-    .niche-b{background:rgba(123,31,162,.2);color:#e1bee7}
+    .niche-b{background:rgba(198,40,40,.2);color:#ef9a9a}
     .stroll-b{background:rgba(0,121,107,.2);color:#b2dfdb}
     .now-tag{font-size:9px;background:#ff6f00;color:#fff;padding:2px 6px;border-radius:4px;margin-left:6px;animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
@@ -336,7 +336,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217l"></script>
+<script src="mountains.js?v=20260217m"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
@@ -377,7 +377,7 @@ let sidebarState="landing";
 // ============ EQUIPMENT & DURATION MAPPING ============
 const EQUIPMENT_MAP={"散策":"casual","入門":"casual","初級":"hiking","中級":"hiking","中級〜上級":"hiking","上級":"hiking","エキスパート":"hiking"};
 const EQ_LABELS={casual:"私服OK",hiking:"登山装備"};
-const CAT_COLORS={popular:"#2d6a4f",niche:"#7b1fa2",stroll:"#00796b"};
+const EQ_COLORS={casual:"#00796b",hiking:"#c62828"};
 
 function getEquipmentCategory(diff){return EQUIPMENT_MAP[diff]||"hiking";}
 
@@ -433,7 +433,7 @@ function addLegendControl(map){
     options:{position:'bottomleft'},
     onAdd:function(){
       const d=L.DomUtil.create('div','map-legend-ctrl');
-      d.innerHTML='<div class="ld"><span class="ldot" style="background:#2d6a4f"></span>定番</div><div class="ld"><span class="ldot" style="background:#7b1fa2"></span>穴場</div><div class="ld"><span class="ldot" style="background:#00796b"></span>散策路</div><div class="ld" style="margin-left:4px"><span style="font-size:13px">🔥</span>旬</div>';
+      d.innerHTML='<div class="ld"><span class="ldot" style="background:#00796b"></span>私服OK</div><div class="ld"><span class="ldot" style="background:#c62828"></span>登山装備</div><div class="ld" style="margin-left:4px"><span style="font-size:13px">🔥</span>旬</div>';
       L.DomEvent.disableClickPropagation(d);
       return d;
     }
@@ -552,7 +552,7 @@ function applyFilters(){
     if(searchKeyword&&!matchesSearch(c,searchKeyword)) return;
     filtered.push(c);
     const loc=getCourseLocation(c);if(!loc)return;
-    const color=CAT_COLORS[c._category]||"#2d6a4f";
+    const color=EQ_COLORS[getEquipmentCategory(c.difficulty)]||"#c62828";
     const marker=createMarker(c,color);
     markerLayer.addLayer(marker);
     courseMarkerMap.set(c.name,marker);
@@ -572,7 +572,8 @@ function createMarker(c,color){
       ?`<div class="marker-season" style="position:relative;width:${sz}px;height:${sz}px"><div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px"></div><div class="marker-season-label">${seasonLabel}</div></div>`
       :`<div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px"></div>`,
     iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
-  const catLabel=c._category==="niche"?"穴場":c._category==="stroll"?"散策路":"定番";
+  const eq=getEquipmentCategory(c.difficulty);
+  const catLabel=eq==="casual"?"👟 私服OK":"🥾 登山装備";
   const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':'';
   const reason=seasonReason(c,ss);
   const prefStr=Array.isArray(c.pref)?c.pref.join('・'):c.pref;
@@ -627,7 +628,7 @@ function renderCourseList(courses){
     const ss=getSeasonScore(c);
     const eq=getEquipmentCategory(c.difficulty);
     const eqL=EQ_LABELS[eq]||'';
-    const color=CAT_COLORS[c._category]||'#2d6a4f';
+    const color=EQ_COLORS[getEquipmentCategory(c.difficulty)]||'#c62828';
     const nm=c.name.replace(/'/g,"\\'");
     const desc=c.description?c.description.length>50?c.description.slice(0,50)+'…':c.description:'';
     const matchInfo=getSearchMatchInfo(c);
@@ -819,9 +820,9 @@ function getNearbyPrefExtras(pref,level){
 
 // ============ RESULT ============
 function renderCard(c,color){
-  const isStroll=c.difficulty==="散策";
-  const headerColor=isStroll?"linear-gradient(135deg,#00796b,#26a69a)":color;
-  const badge=c.niche?'<span class="niche-b">穴場</span>':isStroll?'<span class="stroll-b">散策路</span>':'';
+  const eqCat=getEquipmentCategory(c.difficulty);
+  const headerColor=eqCat==="casual"?"linear-gradient(135deg,#00796b,#26a69a)":"linear-gradient(135deg,#b71c1c,#c62828)";
+  const badge=eqCat==="casual"?'<span class="stroll-b">👟 私服OK</span>':'<span class="niche-b">🥾 登山装備</span>';
   const ss=getSeasonScore(c);
   const hl=getHighlightText(c);
   let siHtml='';
@@ -896,7 +897,7 @@ function showDiagnosisResult(){
       ${nowPicks.map(c=>renderCard(c,color)).join("")}
       ${pop.filter(c=>getSeasonScore(c)<2).map(c=>renderCard(c,color)).join("")}
       ${niche.filter(c=>getSeasonScore(c)<2).map(c=>renderCard(c,color)).join("")}
-      ${strolls.length?`<div class="stroll-note"><strong>🌿 自然散策路</strong> — 私服OK・観光プランに組み込めるお手軽コース</div>`:''}
+      ${strolls.length?`<div class="stroll-note"><strong>👟 私服で楽しめるコース</strong> — 登山装備なしでOK</div>`:''}
       ${strolls.filter(c=>getSeasonScore(c)<2).map(c=>renderCard(c,color)).join("")}
       ${nearby.length?`<div class="nearby-note"><strong>🚗 近隣県のおすすめ</strong>（${nearbyPrefs.join("・")}）</div>`:''}
       ${nearby.map(c=>renderCard(c,color)).join("")}
@@ -910,7 +911,7 @@ function showDiagnosisResult(){
   markerLayer.clearLayers();courseMarkerMap.clear();
   const allDiag=[...pop,...niche,...strolls,...nearby];
   allDiag.forEach(c=>{
-    const clr=c._fromPref?'#1565c0':(c.difficulty==='散策'?'#00796b':(c.niche?'#7b1fa2':'#2d6a4f'));
+    const clr=c._fromPref?'#1565c0':EQ_COLORS[getEquipmentCategory(c.difficulty)]||'#c62828';
     const loc=getCourseLocation(c);if(!loc)return;
     const m=createMarker(c,clr);
     markerLayer.addLayer(m);courseMarkerMap.set(c.name,m);
