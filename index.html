@@ -407,6 +407,42 @@ function geoToast(msg){
   t.textContent=msg;t.classList.add('show');
   clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),3000);
 }
+function applyGeoResult(lat,lng,accuracy,approx){
+  const btn=document.getElementById('geo-btn');
+  userLocation={lat,lng};
+  if(btn){btn.classList.remove('geo-loading','geo-error');btn.classList.add('geo-active');}
+  if(userMarker){mainMap.removeLayer(userMarker);}
+  if(userAccuracyCircle){mainMap.removeLayer(userAccuracyCircle);}
+  userMarker=L.circleMarker([lat,lng],{
+    radius:8,fillColor:approx?'#5c6bc0':'#1565c0',color:'#fff',weight:3,fillOpacity:1,opacity:1,
+    pane:'markerPane'
+  }).addTo(mainMap).bindPopup(approx?'📍 おおよその現在地（IP推定）':'📍 現在地');
+  if(accuracy&&accuracy<50000){
+    userAccuracyCircle=L.circle([lat,lng],{
+      radius:accuracy,fillColor:'#1565c0',fillOpacity:0.08,color:'#1565c0',weight:1,opacity:0.3,interactive:false
+    }).addTo(mainMap);
+  }
+  mainMap.setView([lat,lng],approx?8:10,{animate:true});
+  geoToast(approx?'おおよその現在地から近い順に並べ替えました':'現在地から近い順に並べ替えました');
+  applyFilters();
+}
+function ipGeoFallback(){
+  geoToast('IP情報からおおよその位置を取得中…');
+  fetch('https://ipapi.co/json/',{signal:AbortSignal.timeout(10000)})
+    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(d=>{
+      if(d.latitude&&d.longitude){
+        applyGeoResult(d.latitude,d.longitude,null,true);
+      } else { throw new Error('no coords'); }
+    })
+    .catch(e=>{
+      console.error('[IP Geolocation fallback]',e);
+      const btn=document.getElementById('geo-btn');
+      if(btn){btn.classList.remove('geo-loading');btn.classList.add('geo-error');}
+      geoToast('位置情報を取得できませんでした');
+      setTimeout(()=>{if(btn)btn.classList.remove('geo-error');},6000);
+    });
+}
 function toggleGeoLocation(){
   const btn=document.getElementById('geo-btn');if(!btn)return;
   if(userLocation){
@@ -422,29 +458,16 @@ function toggleGeoLocation(){
   btn.classList.add('geo-loading');
   geoToast('現在地を取得中…');
   navigator.geolocation.getCurrentPosition(pos=>{
-    userLocation={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    btn.classList.remove('geo-loading','geo-error');
-    btn.classList.add('geo-active');
-    if(userMarker){mainMap.removeLayer(userMarker);}
-    if(userAccuracyCircle){mainMap.removeLayer(userAccuracyCircle);}
-    userMarker=L.circleMarker([userLocation.lat,userLocation.lng],{
-      radius:8,fillColor:'#1565c0',color:'#fff',weight:3,fillOpacity:1,opacity:1,
-      pane:'markerPane'
-    }).addTo(mainMap).bindPopup('📍 現在地');
-    const acc=pos.coords.accuracy;
-    if(acc&&acc<50000){
-      userAccuracyCircle=L.circle([userLocation.lat,userLocation.lng],{
-        radius:acc,fillColor:'#1565c0',fillOpacity:0.08,color:'#1565c0',weight:1,opacity:0.3,interactive:false
-      }).addTo(mainMap);
-    }
-    mainMap.setView([userLocation.lat,userLocation.lng],10,{animate:true});
-    geoToast('現在地から近い順に並べ替えました');
-    applyFilters();
+    applyGeoResult(pos.coords.latitude,pos.coords.longitude,pos.coords.accuracy,false);
   },err=>{
-    btn.classList.remove('geo-loading');btn.classList.add('geo-error');
-    console.error('[Geolocation]',{code:err.code,message:err.message,PERMISSION_DENIED:err.PERMISSION_DENIED,POSITION_UNAVAILABLE:err.POSITION_UNAVAILABLE,TIMEOUT:err.TIMEOUT});
-    geoToast(`エラー code:${err.code} — ${err.message}`);
-    setTimeout(()=>btn.classList.remove('geo-error'),6000);
+    console.error('[Geolocation]',err.code,err.message);
+    if(err.code===2||err.code===3){
+      ipGeoFallback();
+    } else {
+      btn.classList.remove('geo-loading');btn.classList.add('geo-error');
+      geoToast(err.code===1?'位置情報の使用が許可されていません':'位置情報を取得できませんでした');
+      setTimeout(()=>btn.classList.remove('geo-error'),6000);
+    }
   },{enableHighAccuracy:true,timeout:30000,maximumAge:600000});
 }
 
