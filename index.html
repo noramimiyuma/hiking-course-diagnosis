@@ -428,6 +428,7 @@ function matchesSearch(course,keyword){
   if(tokens.length===0) return true;
   let searchable=(course.name||'').toLowerCase();
   searchable+=' '+(course.description||'').toLowerCase();
+  if(course.pref) searchable+=' '+(Array.isArray(course.pref)?course.pref.join(' '):course.pref).toLowerCase();
   if(course.tags) searchable+=' '+course.tags.map(t=>t.t).join(' ').toLowerCase();
   const hl=COURSE_HIGHLIGHTS[course.name];
   if(hl) searchable+=' '+Object.values(hl).join(' ').toLowerCase();
