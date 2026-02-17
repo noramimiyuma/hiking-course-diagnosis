@@ -52,12 +52,15 @@
 
     /* ========== SEARCH ========== */
     .sb-search{padding:10px 16px;border-bottom:1px solid #e8ede8}
-    .search-row{display:flex;gap:8px;align-items:stretch}
-    .search-box{display:flex;align-items:center;gap:6px;background:#f5f7f5;border:1.5px solid #dce4dc;border-radius:8px;padding:7px 10px;transition:border-color .2s;flex:1;min-width:0}
-    .geo-btn{flex-shrink:0;background:#f5f7f5;border:1.5px solid #dce4dc;border-radius:8px;padding:7px 10px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap;color:#555;transition:all .2s}
-    .geo-btn:hover{border-color:#2d6a4f;background:#e8f5e9}
-    .geo-btn.geo-active{background:#1565c0;border-color:#1565c0;color:#fff;font-weight:600}
-    .geo-btn.geo-error{background:#ffebee;border-color:#e53935;color:#c62828;font-size:10px}
+    .search-box{display:flex;align-items:center;gap:6px;background:#f5f7f5;border:1.5px solid #dce4dc;border-radius:8px;padding:7px 10px;transition:border-color .2s}
+    .geo-ctrl{background:#fff;width:40px;height:40px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-size:20px;line-height:1;color:#666;transition:all .2s;padding:0}
+    .geo-ctrl:hover{background:#f0f0f0;color:#333}
+    .geo-ctrl.geo-active{color:#1565c0}
+    .geo-ctrl.geo-active::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:6px;height:6px;background:#1565c0;border-radius:50%}
+    .geo-ctrl.geo-loading{color:#aaa;pointer-events:none}
+    .geo-ctrl.geo-error{color:#e53935}
+    .geo-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;z-index:10000;pointer-events:none;opacity:0;transition:opacity .3s}
+    .geo-toast.show{opacity:1}
     .search-box:focus-within{border-color:#2d6a4f;background:#fff}
     .search-icon{font-size:14px;flex-shrink:0}
     #search-input{flex:1;border:none;background:transparent;font-size:13px;outline:none;color:#333;font-family:inherit;min-width:0}
@@ -238,13 +241,10 @@
         <button class="btn-diag" onclick="startQuiz()">📋 診断する</button>
       </div>
       <div class="sb-search">
-        <div class="search-row">
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="search-input" placeholder="コース名・見どころで検索…" oninput="onSearchInput(this.value)">
-            <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
-          </div>
-          <button class="geo-btn" id="geo-btn" onclick="toggleGeoLocation()">📍 現在地から探す</button>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="コース名・見どころで検索…" oninput="onSearchInput(this.value)">
+          <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
         </div>
       </div>
       <div class="sb-presets" id="sb-presets">
@@ -345,7 +345,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217s"></script>
+<script src="mountains.js?v=20260217t"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
@@ -402,23 +402,29 @@ function haversineKm(lat1,lng1,lat2,lng2){
 }
 function formatDist(km){return km<1?`${Math.round(km*10)/10}km`:km<100?`${Math.round(km)}km`:`約${Math.round(km/10)*10}km`;}
 
+function geoToast(msg){
+  const t=document.getElementById('geo-toast');if(!t)return;
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),3000);
+}
 function toggleGeoLocation(){
-  const btn=document.getElementById('geo-btn');
+  const btn=document.getElementById('geo-btn');if(!btn)return;
   if(userLocation){
     userLocation=null;
     if(userMarker){mainMap.removeLayer(userMarker);userMarker=null;}
     if(userAccuracyCircle){mainMap.removeLayer(userAccuracyCircle);userAccuracyCircle=null;}
     btn.classList.remove('geo-active');
-    btn.textContent='📍 現在地から探す';
+    geoToast('現在地をOFFにしました');
     applyFilters();
     return;
   }
-  if(!navigator.geolocation){btn.textContent='📍 位置情報非対応';btn.classList.add('geo-error');return;}
-  btn.textContent='📍 取得中…';btn.disabled=true;
+  if(!navigator.geolocation){geoToast('この端末では位置情報を利用できません');btn.classList.add('geo-error');return;}
+  btn.classList.add('geo-loading');
+  geoToast('現在地を取得中…');
   navigator.geolocation.getCurrentPosition(pos=>{
     userLocation={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    btn.disabled=false;btn.classList.add('geo-active');btn.classList.remove('geo-error');
-    btn.textContent='📍 現在地ON';
+    btn.classList.remove('geo-loading','geo-error');
+    btn.classList.add('geo-active');
     if(userMarker){mainMap.removeLayer(userMarker);}
     if(userAccuracyCircle){mainMap.removeLayer(userAccuracyCircle);}
     userMarker=L.circleMarker([userLocation.lat,userLocation.lng],{
@@ -432,12 +438,13 @@ function toggleGeoLocation(){
       }).addTo(mainMap);
     }
     mainMap.setView([userLocation.lat,userLocation.lng],10,{animate:true});
+    geoToast('現在地から近い順に並べ替えました');
     applyFilters();
   },err=>{
-    btn.disabled=false;btn.classList.add('geo-error');
-    const msgs={1:'📍 位置情報が許可されていません',2:'📍 位置を特定できませんでした',3:'📍 取得がタイムアウトしました'};
-    btn.textContent=msgs[err.code]||'📍 取得に失敗しました';
-    setTimeout(()=>{btn.textContent='📍 現在地から探す';btn.classList.remove('geo-error');},4000);
+    btn.classList.remove('geo-loading');btn.classList.add('geo-error');
+    const msgs={1:'位置情報が許可されていません',2:'位置を特定できませんでした',3:'位置情報の取得がタイムアウトしました'};
+    geoToast(msgs[err.code]||'位置情報の取得に失敗しました');
+    setTimeout(()=>btn.classList.remove('geo-error'),4000);
   },{enableHighAccuracy:true,timeout:30000,maximumAge:600000});
 }
 
@@ -534,6 +541,7 @@ function initMainMap(){
   const canvasRenderer=L.canvas({padding:0.5});
   mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true}).setView([36.2,138.25],5);
   L.control.zoom({position:'bottomright'}).addTo(mainMap);
+  addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
   markerLayer=L.layerGroup().addTo(mainMap);
@@ -541,6 +549,24 @@ function initMainMap(){
     clearTimeout(visibleUpdateTimer);
     visibleUpdateTimer=setTimeout(updateVisibleMarkers,150);
   });
+}
+function addGeoControl(map){
+  const C=L.Control.extend({
+    options:{position:'bottomright'},
+    onAdd(){
+      const btn=L.DomUtil.create('button','geo-ctrl');
+      btn.id='geo-btn';
+      btn.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>';
+      btn.title='現在地を表示';
+      L.DomEvent.disableClickPropagation(btn);
+      L.DomEvent.on(btn,'click',toggleGeoLocation);
+      return btn;
+    }
+  });
+  new C().addTo(map);
+  // toast element
+  const toast=document.createElement('div');toast.className='geo-toast';toast.id='geo-toast';
+  document.body.appendChild(toast);
 }
 
 // ============ SEARCH ============
