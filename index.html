@@ -62,11 +62,12 @@
     .geo-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;z-index:10000;pointer-events:none;opacity:0;transition:opacity .3s}
     .geo-toast.show{opacity:1}
     .geo-marker{position:relative;width:20px;height:20px}
-    .geo-marker-dot{position:absolute;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;background:#1565c0;border:3px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.4);z-index:2}
-    .geo-marker-dot.approx{background:#5c6bc0}
-    .geo-marker-pulse{position:absolute;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;background:rgba(21,101,192,.35);border-radius:50%;z-index:1;animation:geo-pulse 2s ease-out infinite}
-    .geo-marker-pulse.approx{background:rgba(92,107,192,.3)}
-    @keyframes geo-pulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(4.5);opacity:0}}
+    .geo-marker-dot{position:absolute;top:50%;left:50%;width:18px;height:18px;margin:-9px 0 0 -9px;background:#1565c0;border:3px solid #fff;border-radius:50%;box-shadow:0 0 6px rgba(21,101,192,.6),0 1px 4px rgba(0,0,0,.4);z-index:2}
+    .geo-marker-dot.approx{background:#5c6bc0;box-shadow:0 0 6px rgba(92,107,192,.6),0 1px 4px rgba(0,0,0,.4)}
+    .geo-marker-pulse{position:absolute;top:50%;left:50%;width:18px;height:18px;margin:-9px 0 0 -9px;background:rgba(21,101,192,.55);border:2px solid rgba(21,101,192,.4);border-radius:50%;z-index:1;animation:geo-pulse 1.8s ease-out infinite}
+    .geo-marker-pulse2{position:absolute;top:50%;left:50%;width:18px;height:18px;margin:-9px 0 0 -9px;background:rgba(21,101,192,.4);border-radius:50%;z-index:1;animation:geo-pulse 1.8s ease-out .9s infinite}
+    .geo-marker-pulse.approx,.geo-marker-pulse2.approx{background:rgba(92,107,192,.45);border-color:rgba(92,107,192,.35)}
+    @keyframes geo-pulse{0%{transform:scale(1);opacity:1}70%{opacity:.3}100%{transform:scale(5);opacity:0}}
     .search-box:focus-within{border-color:#2d6a4f;background:#fff}
     .search-icon{font-size:14px;flex-shrink:0}
     #search-input{flex:1;border:none;background:transparent;font-size:13px;outline:none;color:#333;font-family:inherit;min-width:0}
@@ -422,7 +423,7 @@ function applyGeoResult(lat,lng,accuracy,approx){
   const ac=approx?'approx':'';
   const icon=L.divIcon({
     className:'',
-    html:`<div class="geo-marker"><div class="geo-marker-pulse ${ac}"></div><div class="geo-marker-dot ${ac}"></div></div>`,
+    html:`<div class="geo-marker"><div class="geo-marker-pulse ${ac}"></div><div class="geo-marker-pulse2 ${ac}"></div><div class="geo-marker-dot ${ac}"></div></div>`,
     iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-12]
   });
   userMarker=L.marker([lat,lng],{icon,pane:'markerPane',interactive:true})
