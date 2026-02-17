@@ -126,7 +126,7 @@
     .r-sum p{margin:0}
 
     .cards{display:flex;flex-direction:column;gap:10px}
-    .card{border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:all .2s;border:1px solid #e8ede8}
+    .card{border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:all .2s;border:1px solid #e8ede8;cursor:pointer}
     .card:hover{box-shadow:0 3px 12px rgba(0,0,0,.12)}
     .card-h{padding:10px 14px;color:#fff;display:flex;justify-content:space-between;align-items:center;border-radius:10px 10px 0 0}
     .card-h h3{font-size:14px;font-weight:700;flex:1}
@@ -817,7 +817,8 @@ function renderCard(c,color){
   let siHtml='';
   if(ss===3) siHtml=`<div class="season-indicator"><span class="si-badge si-highlight">🔥 今が旬！</span><span class="highlight-text">${hl}</span></div>`;
   else if(ss===2) siHtml=`<div class="season-indicator"><span class="si-badge si-best">✨ ベストシーズン</span></div>`;
-  return `<div class="card">
+  const nm=c.name.replace(/'/g,"\\'");
+  return `<div class="card" onclick="panToMarker('${nm}')">
     <div class="card-h" style="background:${headerColor}">
       <h3>${c.name}${badge}${ss===3?'<span class="now-tag">NOW</span>':''}</h3>
       <span class="diff-tag">${c.difficulty}</span>
