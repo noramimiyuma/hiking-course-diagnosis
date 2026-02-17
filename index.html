@@ -59,6 +59,16 @@
     .search-clear:hover{color:#555}
     .sb-ccard-match{padding:3px 10px 5px;font-size:10px;color:#e65100;background:#fff8f0;border-top:1px solid #ffe0b2}
 
+    /* ========== SEARCH PRESETS ========== */
+    .sb-presets{padding:12px 16px;border-bottom:1px solid #e8ede8}
+    .preset-cat{margin-bottom:10px}
+    .preset-cat:last-child{margin-bottom:0}
+    .preset-cat-name{font-size:10px;font-weight:700;color:#888;margin-bottom:5px;display:flex;align-items:center;gap:4px}
+    .preset-btns{display:flex;flex-wrap:wrap;gap:4px}
+    .preset-btn{padding:4px 9px;border:1.5px solid #e8ede8;border-radius:14px;background:#fff;font-size:11px;color:#555;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .preset-btn:hover{border-color:#52b788;background:#edf7f0;color:#2d6a4f}
+    .preset-btn.active{border-color:#2d6a4f;background:#e8f5e9;color:#1b4332;font-weight:600}
+
     /* ========== COURSE LIST ========== */
     .sb-course-list{padding:8px 12px}
     .sb-ccard{border:1px solid #e4e8e4;border-radius:10px;overflow:hidden;cursor:pointer;transition:all .15s;margin-bottom:8px}
@@ -225,6 +235,50 @@
           <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
         </div>
       </div>
+      <div class="sb-presets" id="sb-presets">
+        <div class="preset-cat">
+          <div class="preset-cat-name">🌸 季節の花・植物</div>
+          <div class="preset-btns">
+            <button class="preset-btn" onclick="applyPreset(this,'桜')">桜</button>
+            <button class="preset-btn" onclick="applyPreset(this,'紅葉')">紅葉</button>
+            <button class="preset-btn" onclick="applyPreset(this,'新緑')">新緑</button>
+            <button class="preset-btn" onclick="applyPreset(this,'梅')">梅</button>
+            <button class="preset-btn" onclick="applyPreset(this,'ツツジ')">ツツジ</button>
+            <button class="preset-btn" onclick="applyPreset(this,'アジサイ')">アジサイ</button>
+          </div>
+        </div>
+        <div class="preset-cat">
+          <div class="preset-cat-name">🏔️ 自然の見どころ</div>
+          <div class="preset-btns">
+            <button class="preset-btn" onclick="applyPreset(this,'渓谷')">渓谷</button>
+            <button class="preset-btn" onclick="applyPreset(this,'滝')">滝</button>
+            <button class="preset-btn" onclick="applyPreset(this,'海')">海</button>
+            <button class="preset-btn" onclick="applyPreset(this,'富士山')">富士山</button>
+            <button class="preset-btn" onclick="applyPreset(this,'高原')">高原</button>
+            <button class="preset-btn" onclick="applyPreset(this,'森林浴')">森林浴</button>
+            <button class="preset-btn" onclick="applyPreset(this,'湖')">湖</button>
+          </div>
+        </div>
+        <div class="preset-cat">
+          <div class="preset-cat-name">🏯 歴史・文化</div>
+          <div class="preset-btns">
+            <button class="preset-btn" onclick="applyPreset(this,'神社')">神社</button>
+            <button class="preset-btn" onclick="applyPreset(this,'寺')">寺</button>
+            <button class="preset-btn" onclick="applyPreset(this,'城')">城</button>
+            <button class="preset-btn" onclick="applyPreset(this,'温泉')">温泉</button>
+            <button class="preset-btn" onclick="applyPreset(this,'世界遺産')">世界遺産</button>
+          </div>
+        </div>
+        <div class="preset-cat">
+          <div class="preset-cat-name">🥾 コーステーマ</div>
+          <div class="preset-btns">
+            <button class="preset-btn" onclick="applyPreset(this,'関東ふれあいの道')">関東ふれあいの道</button>
+            <button class="preset-btn" onclick="applyPreset(this,'百名山')">百名山</button>
+            <button class="preset-btn" onclick="applyPreset(this,'展望')">展望</button>
+            <button class="preset-btn" onclick="applyPreset(this,'縦走')">縦走</button>
+          </div>
+        </div>
+      </div>
       <div class="sb-filters">
         <div class="filter-group">
           <label class="filter-label">装備基準</label>
@@ -278,7 +332,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217d"></script>
+<script src="mountains.js?v=20260217e"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
@@ -439,6 +493,7 @@ function onSearchInput(value){
   clearTimeout(searchDebounceTimer);
   const clearBtn=document.getElementById('search-clear');
   if(clearBtn) clearBtn.classList.toggle('hidden',!value);
+  document.querySelectorAll('.preset-btn.active').forEach(b=>b.classList.remove('active'));
   searchDebounceTimer=setTimeout(()=>{
     searchKeyword=value.trim();
     applyFilters();
@@ -451,6 +506,25 @@ function clearSearch(){
   const clearBtn=document.getElementById('search-clear');
   if(clearBtn) clearBtn.classList.add('hidden');
   searchKeyword='';
+  document.querySelectorAll('.preset-btn.active').forEach(b=>b.classList.remove('active'));
+  applyFilters();
+}
+
+function applyPreset(btn,keyword){
+  const wasActive=btn.classList.contains('active');
+  document.querySelectorAll('.preset-btn.active').forEach(b=>b.classList.remove('active'));
+  const input=document.getElementById('search-input');
+  const clearBtn=document.getElementById('search-clear');
+  if(wasActive){
+    if(input) input.value='';
+    if(clearBtn) clearBtn.classList.add('hidden');
+    searchKeyword='';
+  } else {
+    btn.classList.add('active');
+    if(input) input.value=keyword;
+    if(clearBtn) clearBtn.classList.remove('hidden');
+    searchKeyword=keyword;
+  }
   applyFilters();
 }
 
