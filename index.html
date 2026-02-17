@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    html,body{height:100%;overflow:hidden;font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}
-    body{display:flex;background:#eee}
+    html{height:100%;overflow:hidden}
+    body{height:100%;overflow:hidden;font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;display:flex;background:#eee}
     .hidden{display:none!important}
 
     /* ========== MAIN MAP ========== */
@@ -211,9 +211,10 @@
 
     /* ========== MOBILE (bottom sheet) ========== */
     @media(max-width:768px){
-      body{flex-direction:column;position:relative}
-      #main-map{width:100%;height:100vh;height:100dvh;position:fixed;top:0;left:0}
-      .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:90vh;height:90dvh;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);z-index:100;transition:transform .35s cubic-bezier(.2,.9,.3,1);margin-left:0;overflow:hidden}
+      html,body{position:fixed;top:0;left:0;right:0;bottom:0;height:auto;overflow:hidden}
+      body{flex-direction:column}
+      #main-map{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%}
+      .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:90%;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);z-index:100;transition:transform .35s cubic-bezier(.2,.9,.3,1);margin-left:0;overflow:hidden;display:flex;flex-direction:column}
       .sidebar-drag{display:flex;align-items:center;justify-content:center;width:100%;height:44px;flex-shrink:0;cursor:grab;touch-action:none}
       .sidebar-drag::after{content:'';display:block;width:48px;height:5px;background:#aaa;border-radius:3px}
       .sidebar-header{display:none}
@@ -226,7 +227,7 @@
       .sb-presets{display:none!important}
       .leaflet-bottom.leaflet-right{transition:bottom .35s cubic-bezier(.2,.9,.3,1)}
       /* map preset chips — fixed at top below safe area */
-      .map-preset-bar{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:99;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:8px 10px;display:flex;gap:7px;white-space:nowrap;scrollbar-width:none;pointer-events:auto;background:linear-gradient(180deg,rgba(0,0,0,.18) 0%,transparent 100%)}
+      .map-preset-bar{position:fixed;top:0;left:0;right:0;z-index:99;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:8px 10px;padding-top:calc(env(safe-area-inset-top,0px) + 6px);display:flex;gap:7px;white-space:nowrap;scrollbar-width:none;pointer-events:auto;background:linear-gradient(180deg,rgba(0,0,0,.22) 0%,transparent 100%)}
       .map-preset-bar::-webkit-scrollbar{display:none}
       .map-preset-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1.5px solid rgba(0,0,0,.08);font-size:13px;font-weight:500;color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.13);transition:all .15s;user-select:none;-webkit-user-select:none}
       .map-preset-chip:active{transform:scale(.95)}
@@ -902,7 +903,7 @@ function toggleSidebar(){
 /* --- Mobile 3-stop sheet: peek (1/3) | half (legacy compat) | full | closed --- */
 let sheetStop='peek'; // 'closed','peek','full'
 function getSheetStops(){
-  const vh=window.innerHeight;
+  const vh=document.documentElement.clientHeight||window.innerHeight;
   const sbH=Math.round(vh*0.9);
   const peekH=Math.round(vh/3);
   return {closed:sbH-48, peek:sbH-peekH, full:0, sbH, vh, peekH};
