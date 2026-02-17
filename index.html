@@ -569,10 +569,10 @@ function createMarker(c,color){
   const icon=L.divIcon({className:'',
     html:isSeason
       ?`<div class="marker-season" style="position:relative;width:${sz}px;height:${sz}px"><div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px"></div><div class="marker-season-label">${seasonLabel}</div></div>`
-      :`<div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px;opacity:${ss===1?0.85:0.5}"></div>`,
+      :`<div class="marker-dot" style="background:${color};width:${sz}px;height:${sz}px"></div>`,
     iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
   const catLabel=c._category==="niche"?"穴場":c._category==="stroll"?"散策路":"定番";
-  const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':ss===1?'✅ 今月OK':'⏸️ シーズン外';
+  const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':'';
   const reason=seasonReason(c,ss);
   const prefStr=Array.isArray(c.pref)?c.pref.join('・'):c.pref;
   const searchUrl=`https://www.google.com/search?q=${encodeURIComponent(c.name)}`;
@@ -580,7 +580,7 @@ function createMarker(c,color){
   const popup=`<div class="map-popup-title">${course_season_icon(ss)} ${c.name}</div>
     <div class="map-popup-meta">${catLabel}・${c.difficulty}<br>📍 ${prefStr}<br>⏱️ ${c.time}・📏 ${c.elevation}<br>📅 ${c.season}</div>
     ${desc?`<div style="font-size:11px;color:#444;line-height:1.5;margin-top:4px;border-top:1px solid #eee;padding-top:4px">📝 ${desc}</div>`:''}
-    <div class="map-popup-season">${sl}${reason}</div>
+    ${(sl||reason)?`<div class="map-popup-season">${sl}${reason}</div>`:''}
     <a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a>`;
   const marker=L.marker([loc.lat,loc.lng],{icon,zIndexOffset:isSeason?1000:0}).bindPopup(popup,{maxWidth:260});
   marker.on('popupopen',()=>highlightCard(c.name));
@@ -588,7 +588,7 @@ function createMarker(c,color){
   return marker;
 }
 
-function course_season_icon(ss){return ss===3?'🔥':ss===2?'✨':ss===1?'✅':'⏸️';}
+function course_season_icon(ss){return ss===3?'🔥':ss===2?'✨':'';}
 
 function seasonReason(c,ss){
   if(ss===3){const hl=getHighlightText(c);return hl?`<br><span style="color:#e65100;font-weight:600">💡 ${hl}</span>`:''}
@@ -817,9 +817,7 @@ function renderCard(c,color){
   let siHtml='';
   if(ss===3) siHtml=`<div class="season-indicator"><span class="si-badge si-highlight">🔥 今が旬！</span><span class="highlight-text">${hl}</span></div>`;
   else if(ss===2) siHtml=`<div class="season-indicator"><span class="si-badge si-best">✨ ベストシーズン</span></div>`;
-  else if(ss===1) siHtml=`<div class="season-indicator"><span class="si-badge si-ok">✅ 今月OK</span></div>`;
-  else siHtml=`<div class="season-indicator"><span class="si-badge si-offseason">⏸️ シーズン外</span></div>`;
-  return `<div class="card" style="${ss===0?'opacity:.6':''}">
+  return `<div class="card">
     <div class="card-h" style="background:${headerColor}">
       <h3>${c.name}${badge}${ss===3?'<span class="now-tag">NOW</span>':''}</h3>
       <span class="diff-tag">${c.difficulty}</span>
