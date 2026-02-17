@@ -52,7 +52,12 @@
 
     /* ========== SEARCH ========== */
     .sb-search{padding:10px 16px;border-bottom:1px solid #e8ede8}
-    .search-box{display:flex;align-items:center;gap:6px;background:#f5f7f5;border:1.5px solid #dce4dc;border-radius:8px;padding:7px 10px;transition:border-color .2s}
+    .search-row{display:flex;gap:8px;align-items:stretch}
+    .search-box{display:flex;align-items:center;gap:6px;background:#f5f7f5;border:1.5px solid #dce4dc;border-radius:8px;padding:7px 10px;transition:border-color .2s;flex:1;min-width:0}
+    .geo-btn{flex-shrink:0;background:#f5f7f5;border:1.5px solid #dce4dc;border-radius:8px;padding:7px 10px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap;color:#555;transition:all .2s}
+    .geo-btn:hover{border-color:#2d6a4f;background:#e8f5e9}
+    .geo-btn.geo-active{background:#1565c0;border-color:#1565c0;color:#fff;font-weight:600}
+    .geo-btn.geo-error{background:#ffebee;border-color:#e53935;color:#c62828;font-size:10px}
     .search-box:focus-within{border-color:#2d6a4f;background:#fff}
     .search-icon{font-size:14px;flex-shrink:0}
     #search-input{flex:1;border:none;background:transparent;font-size:13px;outline:none;color:#333;font-family:inherit;min-width:0}
@@ -60,6 +65,7 @@
     .search-clear{background:none;border:none;color:#999;font-size:14px;cursor:pointer;padding:0 2px;flex-shrink:0}
     .search-clear:hover{color:#555}
     .sb-ccard-match{padding:3px 10px 5px;font-size:10px;color:#e65100;background:#fff8f0;border-top:1px solid #ffe0b2}
+    .sb-ccard-dist{color:#1565c0;font-weight:600;font-size:11px}
 
     /* ========== SEARCH PRESETS ========== */
     .sb-presets{padding:12px 16px;border-bottom:1px solid #e8ede8}
@@ -232,10 +238,13 @@
         <button class="btn-diag" onclick="startQuiz()">📋 診断する</button>
       </div>
       <div class="sb-search">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="search-input" placeholder="コース名・見どころで検索…" oninput="onSearchInput(this.value)">
-          <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
+        <div class="search-row">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="コース名・見どころで検索…" oninput="onSearchInput(this.value)">
+            <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
+          </div>
+          <button class="geo-btn" id="geo-btn" onclick="toggleGeoLocation()">📍 現在地から探す</button>
         </div>
       </div>
       <div class="sb-presets" id="sb-presets">
@@ -336,7 +345,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217r"></script>
+<script src="mountains.js?v=20260217s"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
@@ -375,6 +384,9 @@ let searchDebounceTimer=null;
 let filteredCourses=[];
 let visibleUpdateTimer=null;
 let sidebarState="landing";
+let userLocation=null;
+let userMarker=null;
+let userAccuracyCircle=null;
 
 // ============ EQUIPMENT & DURATION MAPPING ============
 const EQUIPMENT_MAP={"散策":"casual","入門":"casual","初級":"hiking","中級":"hiking","中級〜上級":"hiking","上級":"hiking","エキスパート":"hiking"};
@@ -382,6 +394,51 @@ const EQ_LABELS={casual:"私服OK",hiking:"登山装備"};
 const EQ_COLORS={casual:"#00796b",hiking:"#c62828"};
 
 function getEquipmentCategory(diff){return EQUIPMENT_MAP[diff]||"hiking";}
+
+function haversineKm(lat1,lng1,lat2,lng2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function formatDist(km){return km<1?`${Math.round(km*10)/10}km`:km<100?`${Math.round(km)}km`:`約${Math.round(km/10)*10}km`;}
+
+function toggleGeoLocation(){
+  const btn=document.getElementById('geo-btn');
+  if(userLocation){
+    userLocation=null;
+    if(userMarker){mainMap.removeLayer(userMarker);userMarker=null;}
+    if(userAccuracyCircle){mainMap.removeLayer(userAccuracyCircle);userAccuracyCircle=null;}
+    btn.classList.remove('geo-active');
+    btn.textContent='📍 現在地から探す';
+    applyFilters();
+    return;
+  }
+  if(!navigator.geolocation){btn.textContent='📍 位置情報非対応';btn.classList.add('geo-error');return;}
+  btn.textContent='📍 取得中…';btn.disabled=true;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    userLocation={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    btn.disabled=false;btn.classList.add('geo-active');btn.classList.remove('geo-error');
+    btn.textContent='📍 現在地ON';
+    if(userMarker){mainMap.removeLayer(userMarker);}
+    if(userAccuracyCircle){mainMap.removeLayer(userAccuracyCircle);}
+    userMarker=L.circleMarker([userLocation.lat,userLocation.lng],{
+      radius:8,fillColor:'#1565c0',color:'#fff',weight:3,fillOpacity:1,opacity:1,
+      pane:'markerPane'
+    }).addTo(mainMap).bindPopup('📍 現在地');
+    const acc=pos.coords.accuracy;
+    if(acc&&acc<50000){
+      userAccuracyCircle=L.circle([userLocation.lat,userLocation.lng],{
+        radius:acc,fillColor:'#1565c0',fillOpacity:0.08,color:'#1565c0',weight:1,opacity:0.3,interactive:false
+      }).addTo(mainMap);
+    }
+    mainMap.setView([userLocation.lat,userLocation.lng],10,{animate:true});
+    applyFilters();
+  },err=>{
+    btn.disabled=false;btn.classList.add('geo-error');
+    btn.textContent=err.code===1?'📍 位置情報が許可されていません':'📍 取得に失敗しました';
+    setTimeout(()=>{btn.textContent='📍 現在地から探す';btn.classList.remove('geo-error');},3000);
+  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+}
 
 function parseDurationHours(t){
   if(!t||t==="—") return null;
@@ -639,7 +696,14 @@ function getSearchMatchInfo(course){
 
 function renderCourseList(courses){
   const el=document.getElementById('sb-course-list');if(!el)return;
-  courses.sort((a,b)=>getSeasonScore(b)-getSeasonScore(a));
+  if(userLocation){
+    courses.sort((a,b)=>{
+      const la=getCourseLocation(a),lb=getCourseLocation(b);
+      return haversineKm(userLocation.lat,userLocation.lng,la.lat,la.lng)-haversineKm(userLocation.lat,userLocation.lng,lb.lat,lb.lng);
+    });
+  } else {
+    courses.sort((a,b)=>getSeasonScore(b)-getSeasonScore(a));
+  }
   const show=courses.slice(0,80);
   el.innerHTML=show.map(c=>{
     const ss=getSeasonScore(c);
@@ -649,13 +713,19 @@ function renderCourseList(courses){
     const nm=c.name.replace(/'/g,"\\'");
     const desc=c.description?c.description.length>50?c.description.slice(0,50)+'…':c.description:'';
     const matchInfo=getSearchMatchInfo(c);
+    let distHtml='';
+    if(userLocation){
+      const loc=getCourseLocation(c);
+      const km=haversineKm(userLocation.lat,userLocation.lng,loc.lat,loc.lng);
+      distHtml=`<span class="sb-ccard-dist">📍 ${formatDist(km)}</span>`;
+    }
     return `<div class="sb-ccard" data-course="${c.name}" onclick="panToMarker('${nm}')">
       <div class="sb-ccard-h" style="background:${color}">
         <h4>${course_season_icon(ss)} ${c.name}</h4>
         <span class="eq-tag">${eqL}</span>
       </div>
       <div class="sb-ccard-b">
-        <span>⏱️ ${c.time}</span><span>📏 ${c.elevation}</span><span>📅 ${c.season}</span>
+        ${distHtml}<span>⏱️ ${c.time}</span><span>📏 ${c.elevation}</span><span>📅 ${c.season}</span>
       </div>
       ${desc&&!matchInfo?`<div class="sb-ccard-desc">📝 ${desc}</div>`:''}
       ${matchInfo}
