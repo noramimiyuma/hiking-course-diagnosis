@@ -188,8 +188,10 @@
     .map-popup-meta{font-size:12px;color:#666;line-height:1.5}
     .map-popup-season{font-size:11px;margin-top:4px}
     /* season tooltip on circleMarkers */
-    .season-tip{background:linear-gradient(135deg,#ff6f00,#ff8f00);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;border:none;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap;pointer-events:none}
+    .season-tip{background:linear-gradient(135deg,#ff6f00,#ff8f00);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;border:none;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap;pointer-events:none;transition:none!important}
     .season-tip::before{border-top-color:#ff8f00}
+    .leaflet-zooming .season-tip{opacity:0!important;transition:none!important}
+    .leaflet-tooltip{transition:none!important}
 
     /* ========== MOBILE (bottom sheet) ========== */
     @media(max-width:768px){
@@ -334,7 +336,7 @@
 <button class="mobile-fab hidden" id="mobile-fab" onclick="startQuiz();expandSidebar()">📋 診断をはじめる</button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="mountains.js?v=20260217q"></script>
+<script src="mountains.js?v=20260217r"></script>
 <script>
 // ============ QUESTIONS ============
 const questions=[
