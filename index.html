@@ -208,6 +208,11 @@
     .season-tip::before{border-top-color:#ff8f00}
     .leaflet-zooming .season-tip{opacity:0!important;transition:none!important}
     .leaflet-tooltip{transition:none!important}
+    .season-pulse-wrap{pointer-events:none}
+    .season-pulse-ring{position:absolute;top:50%;left:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:rgba(255,111,0,.4);animation:season-pulse 2s ease-out infinite}
+    .season-pulse-ring.s3{background:rgba(255,61,0,.45)}
+    .leaflet-zooming .season-pulse-ring{opacity:0!important;animation:none!important}
+    @keyframes season-pulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(3.5);opacity:0}}
 
     /* ========== MOBILE (bottom sheet) ========== */
     @media(max-width:768px){
@@ -409,7 +414,7 @@ const questions=[
 // ============ STATE ============
 let selectedPref="",selectedRegion="";
 let curQ=0,totalScore=0,answers={};
-let mainMap=null,markerLayer=null;
+let mainMap=null,markerLayer=null,seasonPulseLayer=null;
 let courseMarkerMap=new Map();
 let allCoursesCache=null;
 let activeFilters={equipment:"all",duration:"all"};
@@ -612,6 +617,7 @@ function initMainMap(){
   addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
+  seasonPulseLayer=L.layerGroup().addTo(mainMap);
   markerLayer=L.layerGroup().addTo(mainMap);
   mainMap.on('moveend',()=>{
     clearTimeout(visibleUpdateTimer);
@@ -757,6 +763,7 @@ function updateVisibleMarkers(){
   let openPopupName=null;
   courseMarkerMap.forEach((mk,name)=>{if(mk.isPopupOpen&&mk.isPopupOpen())openPopupName=name;});
   markerLayer.clearLayers();
+  if(seasonPulseLayer) seasonPulseLayer.clearLayers();
   courseMarkerMap.clear();
   const bounds=mainMap.getBounds().pad(0.3);
   filteredCourses.forEach(c=>{
@@ -799,6 +806,15 @@ function createMarker(c,color){
   if(isSeason){
     const seasonLabel=ss===3?(getHighlightText(c)||'🔥今が旬'):'✨ベストシーズン';
     marker.bindTooltip(seasonLabel,{permanent:true,direction:'top',offset:[0,-8],className:'season-tip'});
+    /* pulse overlay */
+    if(seasonPulseLayer){
+      const pulseIcon=L.divIcon({
+        className:'season-pulse-wrap',
+        html:`<div class="season-pulse-ring ${ss===3?'s3':''}"></div>`,
+        iconSize:[14,14],iconAnchor:[7,7]
+      });
+      seasonPulseLayer.addLayer(L.marker([loc.lat,loc.lng],{icon:pulseIcon,interactive:false}));
+    }
   }
   marker.on('popupopen',()=>highlightCard(c.name));
   marker.on('popupclose',()=>unhighlightCard(c.name));
@@ -1283,7 +1299,7 @@ function showDiagnosisResult(){
   document.getElementById('sb-result').innerHTML=html;
 
   // Update map to show only diagnosis results
-  markerLayer.clearLayers();courseMarkerMap.clear();
+  markerLayer.clearLayers();if(seasonPulseLayer)seasonPulseLayer.clearLayers();courseMarkerMap.clear();
   const allDiag=[...pop,...niche,...strolls,...nearby];
   allDiag.forEach(c=>{
     const clr=c._fromPref?'#1565c0':EQ_COLORS[getEquipmentCategory(c.difficulty)]||'#c62828';
