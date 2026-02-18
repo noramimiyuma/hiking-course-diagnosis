@@ -852,11 +852,11 @@ function updateVisibleMarkers(){
     markerLayer.addLayer(marker);
     courseMarkerMap.set(c.name,marker);
   });
-  /* restore popup */
+  /* restore popup – autoPan:false so the map doesn't jump back */
   const target=openPopupName||_pendingPopupName;
   if(target){
     const mk=courseMarkerMap.get(target);
-    if(mk) mk.openPopup();
+    if(mk) mk.openPopup({autoPan:false});
   }
 }
 
