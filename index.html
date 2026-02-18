@@ -832,31 +832,70 @@ function applyFilters(){
   });
   document.getElementById('filter-count').textContent=`${filteredCourses.length} コース表示中`;
   renderCourseList(filteredCourses);
+  /* full reset: filter changed so all markers must be re-evaluated */
+  resetAllMarkers();
   updateVisibleMarkers();
 }
 
+/* pulse markers keyed by course name for differential cleanup */
+const seasonPulseMap=new Map();
+function resetAllMarkers(){
+  markerLayer.clearLayers();if(seasonPulseLayer)seasonPulseLayer.clearLayers();
+  courseMarkerMap.clear();seasonPulseMap.clear();
+}
+/* rebuild a single marker in-place (e.g. after bookmark toggle) */
+function rebuildMarker(name){
+  if(!markerLayer)return;
+  const old=courseMarkerMap.get(name);
+  const hadPopup=old&&old.isPopupOpen&&old.isPopupOpen();
+  if(old) markerLayer.removeLayer(old);
+  courseMarkerMap.delete(name);
+  if(seasonPulseMap.has(name)){
+    if(seasonPulseLayer) seasonPulseLayer.removeLayer(seasonPulseMap.get(name));
+    seasonPulseMap.delete(name);
+  }
+  const c=filteredCourses.find(x=>x.name===name)||getAllCourses().find(x=>x.name===name);
+  if(!c)return;
+  const color=EQ_COLORS[getEquipmentCategory(c.difficulty)]||"#c62828";
+  const mk=createMarker(c,color);
+  markerLayer.addLayer(mk);
+  courseMarkerMap.set(name,mk);
+  if(hadPopup) mk.openPopup({autoPan:false});
+}
 function updateVisibleMarkers(){
   if(!markerLayer||!mainMap||sidebarState==='result')return;
-  /* remember which popup is open */
-  let openPopupName=null;
-  courseMarkerMap.forEach((mk,name)=>{if(mk.isPopupOpen&&mk.isPopupOpen())openPopupName=name;});
-  markerLayer.clearLayers();
-  if(seasonPulseLayer) seasonPulseLayer.clearLayers();
-  courseMarkerMap.clear();
   const bounds=mainMap.getBounds().pad(0.3);
+  /* build set of course names that should be visible */
+  const shouldShow=new Set();
   filteredCourses.forEach(c=>{
     const loc=getCourseLocation(c);if(!loc)return;
-    if(!bounds.contains([loc.lat,loc.lng]))return;
+    if(bounds.contains([loc.lat,loc.lng])) shouldShow.add(c.name);
+  });
+  /* remove markers that left the viewport (keep popup-open marker) */
+  courseMarkerMap.forEach((mk,name)=>{
+    if(!shouldShow.has(name)){
+      if(mk.isPopupOpen&&mk.isPopupOpen()) return; // keep visible popup
+      markerLayer.removeLayer(mk);
+      courseMarkerMap.delete(name);
+      if(seasonPulseMap.has(name)){
+        if(seasonPulseLayer) seasonPulseLayer.removeLayer(seasonPulseMap.get(name));
+        seasonPulseMap.delete(name);
+      }
+    }
+  });
+  /* add markers that entered the viewport */
+  filteredCourses.forEach(c=>{
+    if(!shouldShow.has(c.name)) return;
+    if(courseMarkerMap.has(c.name)) return; // already on map
     const color=EQ_COLORS[getEquipmentCategory(c.difficulty)]||"#c62828";
     const marker=createMarker(c,color);
     markerLayer.addLayer(marker);
     courseMarkerMap.set(c.name,marker);
   });
-  /* restore popup – autoPan:false so the map doesn't jump back */
-  const target=openPopupName||_pendingPopupName;
-  if(target){
-    const mk=courseMarkerMap.get(target);
-    if(mk) mk.openPopup({autoPan:false});
+  /* if panToMarker set a pending name, open its popup */
+  if(_pendingPopupName){
+    const mk=courseMarkerMap.get(_pendingPopupName);
+    if(mk){mk.openPopup({autoPan:false});_pendingPopupName=null;}
   }
 }
 
@@ -908,7 +947,9 @@ function createMarker(c,color){
         html:`<div class="season-pulse-ring ${ss===3?'s3':''}"></div>`,
         iconSize:[14,14],iconAnchor:[7,7]
       });
-      seasonPulseLayer.addLayer(L.marker([loc.lat,loc.lng],{icon:pulseIcon,interactive:false}));
+      const pm=L.marker([loc.lat,loc.lng],{icon:pulseIcon,interactive:false});
+      seasonPulseLayer.addLayer(pm);
+      seasonPulseMap.set(c.name,pm);
     }
   }
   marker.on('popupopen',()=>highlightCard(c.name));
@@ -967,8 +1008,8 @@ function updateBookmarkUI(name){
       btn.classList.toggle('saved',saved);
     }
   });
-  /* update map marker ring */
-  updateVisibleMarkers();
+  /* rebuild this specific marker (bookmark icon may change) */
+  rebuildMarker(name);
 }
 function updateBookmarkBadge(){
   const ct=getBookmarks().length;
@@ -1480,7 +1521,7 @@ function showDiagnosisResult(){
   document.getElementById('sb-result').innerHTML=html;
 
   // Update map to show only diagnosis results
-  markerLayer.clearLayers();if(seasonPulseLayer)seasonPulseLayer.clearLayers();courseMarkerMap.clear();
+  resetAllMarkers();
   const allDiag=[...pop,...niche,...strolls,...nearby];
   allDiag.forEach(c=>{
     const clr=c._fromPref?'#1565c0':EQ_COLORS[getEquipmentCategory(c.difficulty)]||'#c62828';
