@@ -680,7 +680,7 @@ function initApp(){
 
 function initMainMap(){
   const canvasRenderer=L.canvas({padding:0.5});
-  mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true,zoomSnap:0,scrollWheelZoom:false,smoothWheelZoom:true,smoothSensitivity:3}).setView([36.2,138.25],5);
+  mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true,zoomSnap:0,scrollWheelZoom:false,smoothWheelZoom:true,smoothSensitivity:10}).setView([36.2,138.25],5);
   addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
