@@ -1075,6 +1075,8 @@ function panToMarker(name){
   _pendingPopupName=name;
   const c=filteredCourses.find(x=>x.name===name)||getAllCourses().find(x=>x.name===name);
   if(!c||!mainMap)return;
+  /* mobile: collapse full sheet to peek so the map is visible */
+  if(window.innerWidth<=768&&sheetStop==='full') setSheetPosition('peek',true);
   const loc=getCourseLocation(c);if(!loc)return;
   mainMap.setView([loc.lat,loc.lng],12,{animate:true});
   /* open popup after all moveend/updateVisibleMarkers settle */
