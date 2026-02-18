@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>全国散策マップ — ハイキング・ウォーキングコース診断</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800&display=swap" rel="stylesheet">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     html{height:100%;overflow:hidden}
@@ -19,6 +22,7 @@
     .sidebar.collapsed{margin-left:-380px}
     .sidebar-header{padding:12px 16px;background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;display:flex;align-items:center;gap:10px;flex-shrink:0}
     .sidebar-title{font-size:15px;font-weight:700;flex:1}
+    .sidebar-logo{height:30px;width:auto;flex:1;display:block}
     .sidebar-toggle{background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:background .2s}
     .sidebar-toggle:hover{background:rgba(255,255,255,.35)}
     .sidebar-drag{display:none;-webkit-user-select:none;user-select:none}
@@ -292,8 +296,17 @@
 <div id="sidebar" class="sidebar">
   <div class="sidebar-drag" id="drag-handle"></div>
   <div class="sidebar-header">
-    <span style="font-size:18px">🗾</span>
-    <span class="sidebar-title">全国散策マップ</span>
+    <svg class="sidebar-logo" viewBox="0 0 260 40" xmlns="http://www.w3.org/2000/svg">
+      <!-- mountain silhouette -->
+      <path d="M4 32 L14 12 L19 20 L26 8 L33 20 L38 14 L46 32Z" fill="#81c784" opacity=".7"/>
+      <path d="M8 32 L18 16 L22 22 L28 10 L34 22 L40 32Z" fill="#a5d6a7" opacity=".5"/>
+      <!-- logotype -->
+      <text x="52" y="29" font-family="'M PLUS Rounded 1c','Hiragino Maru Gothic Pro','Yu Gothic',sans-serif" font-size="22" font-weight="800" fill="#fff" letter-spacing="2">全国散策マップ</text>
+      <!-- trail dots -->
+      <circle cx="52" cy="36" r="1" fill="#a5d6a7" opacity=".6"/>
+      <circle cx="58" cy="37" r="1.2" fill="#a5d6a7" opacity=".5"/>
+      <circle cx="65" cy="36.5" r="1" fill="#a5d6a7" opacity=".4"/>
+    </svg>
     <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">◀</button>
   </div>
   <div class="sidebar-body" id="sidebar-body">
