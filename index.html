@@ -305,8 +305,7 @@
     .rp-diag-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;padding:0 2px;line-height:1}
     .rp-diag-del:hover{color:#e53935}
     .rp-diag-card-body{display:flex;gap:12px;font-size:12px;color:#666;margin-top:6px}
-    /* satellite label overlay: blend GSI pale map over satellite */
-    .label-overlay-tile{mix-blend-mode:multiply}
+    /* satellite label overlay: GSI pale map, no blend mode — semi-transparent so satellite shows through */
     /* map bookmark control */
     .map-bm-ctrl{background:#fff;width:40px;height:40px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:#7c4dff;position:relative;transition:all .2s;padding:0}
     .map-bm-ctrl:hover{background:#f5f0ff}
@@ -465,7 +464,7 @@
   </div>
 </div>
 
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v32</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v33</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -711,7 +710,7 @@ const TILE_LAYERS={
 /* label overlay for satellite mode — GSI pale map with multiply blend */
 const LABEL_OVERLAY={
   url:'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
-  opts:{attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',maxZoom:18,opacity:0.85,className:'label-overlay-tile'}
+  opts:{attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',maxZoom:18,opacity:0.4}
 };
 
 function addLayerControl(map){
