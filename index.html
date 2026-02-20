@@ -117,7 +117,7 @@
     .sb-bm-count{font-size:10px;background:#7c4dff;color:#fff;border-radius:10px;padding:1px 6px;font-weight:700;min-width:16px;text-align:center}
     .sb-bm-empty{text-align:center;color:#aaa;font-size:13px;padding:30px 16px;line-height:1.7}
     /* popup bookmark button */
-    .popup-bm-btn{display:inline-flex;align-items:center;gap:3px;margin-top:6px;margin-left:6px;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#555;transition:all .15s;vertical-align:top}
+    .popup-bm-btn{display:inline-flex;align-items:center;gap:3px;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#555;transition:all .15s;box-sizing:border-box}
     .popup-bm-btn:hover{border-color:#7c4dff;color:#7c4dff}
     .popup-bm-btn.saved{background:#ede7f6;border-color:#7c4dff;color:#5e35b1}
     .popup-bm-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0}
@@ -421,7 +421,7 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v22</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v23</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -981,8 +981,8 @@ function createMarker(c,color){
     <div class="map-popup-meta">${catLabel}・${c.difficulty}<br>📍 ${prefStr}<br>⏱️ ${c.time}・📏 ${c.elevation}<br>📅 ${c.season}</div>
     ${desc?`<div style="font-size:11px;color:#444;line-height:1.5;margin-top:4px;border-top:1px solid #eee;padding-top:4px">📝 ${desc}</div>`:''}
     ${(sl||reason)?`<div class="map-popup-season">${sl}${reason}</div>`:''}
-    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
-      <a href="${searchUrl}" target="_blank" rel="noopener" style="padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a>
+    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:stretch">
+      <a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;border:1.5px solid #1a73e8;box-sizing:border-box">🔍 詳細を調べる</a>
       <button class="popup-bm-btn${bm?' saved':''}" data-course="${c.name}" onclick="toggleBookmarkFromPopup('${nmEsc}')">${BM_SVG}${bm?' 保存済み':' 保存'}</button>
       <div style="position:relative;margin-left:auto">
         <button class="popup-more-trigger" onclick="this.nextElementSibling.classList.toggle('show')" style="background:none;border:none;cursor:pointer;font-size:16px;color:#999;padding:2px 6px;line-height:1">⋯</button>
