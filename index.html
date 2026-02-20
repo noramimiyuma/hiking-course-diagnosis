@@ -463,7 +463,7 @@
   </div>
 </div>
 
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v29</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v30</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -706,6 +706,11 @@ const TILE_LAYERS={
   standard:{url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',opts:{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',maxZoom:19}},
   satellite:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',opts:{attribution:'&copy; Esri',maxZoom:18}}
 };
+/* transparent label overlay for satellite mode (place names + borders) */
+const LABEL_OVERLAY={
+  url:'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+  opts:{attribution:'&copy; <a href="https://carto.com/">CARTO</a>',maxZoom:19,subdomains:'abcd',pane:'overlayPane'}
+};
 
 function addLayerControl(map){
   const C=L.Control.extend({
@@ -715,11 +720,15 @@ function addLayerControl(map){
       d.innerHTML='<button class="gmap-layer-btn" data-layer="terrain">🗻 地形</button><button class="gmap-layer-btn" data-layer="standard">🗺️ 地図</button><button class="gmap-layer-btn active" data-layer="satellite">🛰️ 衛星</button>';
       L.DomEvent.disableClickPropagation(d);L.DomEvent.disableScrollPropagation(d);
       let cur=L.tileLayer(TILE_LAYERS.satellite.url,TILE_LAYERS.satellite.opts).addTo(map);
+      let labelLayer=L.tileLayer(LABEL_OVERLAY.url,LABEL_OVERLAY.opts).addTo(map);
       function switchTo(k){
         if(!TILE_LAYERS[k])return;
         d.querySelectorAll('.gmap-layer-btn').forEach(x=>x.classList.remove('active'));
         const ab=d.querySelector(`[data-layer="${k}"]`);if(ab)ab.classList.add('active');
         map.removeLayer(cur);cur=L.tileLayer(TILE_LAYERS[k].url,TILE_LAYERS[k].opts).addTo(map);cur.bringToBack();
+        /* satellite: add label overlay / others: remove */
+        if(k==='satellite'){if(!map.hasLayer(labelLayer)){labelLayer=L.tileLayer(LABEL_OVERLAY.url,LABEL_OVERLAY.opts).addTo(map);}}
+        else{if(map.hasLayer(labelLayer)) map.removeLayer(labelLayer);}
       }
       window._switchTileLayer=switchTo;
       d.addEventListener('click',e=>{
