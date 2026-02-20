@@ -421,7 +421,7 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v19</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v20</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -985,7 +985,7 @@ function createMarker(c,color){
       <a href="${searchUrl}" target="_blank" rel="noopener" style="padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a>
       <button class="popup-bm-btn${bm?' saved':''}" data-course="${c.name}" onclick="toggleBookmarkFromPopup('${nmEsc}')">${BM_SVG}${bm?' 保存済み':' 保存'}</button>
       <div style="position:relative;margin-left:auto">
-        <button onclick="this.nextElementSibling.classList.toggle('show')" style="background:none;border:none;cursor:pointer;font-size:16px;color:#999;padding:2px 6px;line-height:1">⋯</button>
+        <button class="popup-more-trigger" onclick="this.nextElementSibling.classList.toggle('show')" style="background:none;border:none;cursor:pointer;font-size:16px;color:#999;padding:2px 6px;line-height:1">⋯</button>
         <div class="popup-more-menu" style="display:none;position:absolute;right:0;bottom:100%;margin-bottom:4px;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap;z-index:10">
           <a href="javascript:void(0)" onclick="reportWrongLocation('${nmEsc}')" style="display:block;padding:8px 14px;color:#666;font-size:11px;text-decoration:none" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='none'">📍 位置の間違いを報告</a>
         </div>
@@ -1092,8 +1092,11 @@ function updateBookmarkBadge(){
 window.toggleBookmarkFromPopup=function(name){toggleBookmark(name);};
 /* close ⋯ menu on outside click */
 document.addEventListener('click',function(e){
-  if(e.target.closest('.popup-more-menu'))return;
-  document.querySelectorAll('.popup-more-menu.show').forEach(m=>m.classList.remove('show'));
+  var trigger=e.target.closest('.popup-more-trigger');
+  document.querySelectorAll('.popup-more-menu.show').forEach(function(m){
+    if(trigger&&m===trigger.nextElementSibling)return;
+    m.classList.remove('show');
+  });
 });
 
 /* ── 位置報告 (Google Form) ── */
