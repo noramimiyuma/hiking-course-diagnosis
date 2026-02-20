@@ -122,6 +122,7 @@
     .popup-bm-btn.saved{background:#ede7f6;border-color:#7c4dff;color:#5e35b1}
     .popup-bm-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0}
     .popup-bm-btn.saved svg{fill:#7c4dff;stroke:#7c4dff}
+    .popup-more-menu.show{display:block!important}
     /* bookmarked marker icon */
     .bm-marker-icon{display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
     .bm-marker-icon svg{width:22px;height:22px;fill:#7c4dff;stroke:#fff;stroke-width:1.5}
@@ -420,7 +421,7 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v18</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v19</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -983,8 +984,13 @@ function createMarker(c,color){
     <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
       <a href="${searchUrl}" target="_blank" rel="noopener" style="padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a>
       <button class="popup-bm-btn${bm?' saved':''}" data-course="${c.name}" onclick="toggleBookmarkFromPopup('${nmEsc}')">${BM_SVG}${bm?' 保存済み':' 保存'}</button>
-    </div>
-    <div style="text-align:right;margin-top:4px"><a href="javascript:void(0)" onclick="reportWrongLocation('${nmEsc}')" style="color:#aaa;font-size:10px;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">位置の間違いを報告</a></div>`;
+      <div style="position:relative;margin-left:auto">
+        <button onclick="this.nextElementSibling.classList.toggle('show')" style="background:none;border:none;cursor:pointer;font-size:16px;color:#999;padding:2px 6px;line-height:1">⋯</button>
+        <div class="popup-more-menu" style="display:none;position:absolute;right:0;bottom:100%;margin-bottom:4px;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap;z-index:10">
+          <a href="javascript:void(0)" onclick="reportWrongLocation('${nmEsc}')" style="display:block;padding:8px 14px;color:#666;font-size:11px;text-decoration:none" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='none'">📍 位置の間違いを報告</a>
+        </div>
+      </div>
+    </div>`;
   }
   const bm=isBookmarked(c.name);
   let marker;
@@ -1084,6 +1090,11 @@ function updateBookmarkBadge(){
 }
 /* called from popup via global */
 window.toggleBookmarkFromPopup=function(name){toggleBookmark(name);};
+/* close ⋯ menu on outside click */
+document.addEventListener('click',function(e){
+  if(e.target.closest('.popup-more-menu'))return;
+  document.querySelectorAll('.popup-more-menu.show').forEach(m=>m.classList.remove('show'));
+});
 
 /* ── 位置報告 (Google Form) ── */
 /* Google FormのIDとEntry IDを設定すると、フォームへの自動入力リンクが生成されます */
