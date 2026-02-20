@@ -421,7 +421,7 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v23</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v24</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -969,7 +969,8 @@ function createMarker(c,color){
   const r=isSeason?7:5;
   const eq=getEquipmentCategory(c.difficulty);
   const catLabel=eq==="casual"?"👟 私服OK":"🥾 登山装備";
-  const sl=ss===3?'🔥 今が旬！':ss===2?'✨ ベストシーズン':'';
+  const _hl2=ss===2?getHighlightText(c):null;
+  const sl=ss===3?'🔥 今が旬！':(_hl2?'✨ '+_hl2:'');
   const reason=seasonReason(c,ss);
   const prefStr=Array.isArray(c.pref)?c.pref.join('・'):c.pref;
   const searchUrl=`https://www.google.com/search?q=${encodeURIComponent(c.name)}`;
@@ -1009,9 +1010,11 @@ function createMarker(c,color){
     }).bindPopup(buildPopupHtml,{maxWidth:260});
   }
   if(isSeason){
-    const seasonLabel=ss===3?(getHighlightText(c)||'🔥今が旬'):'✨ベストシーズン';
-    const ttOff=bm?[0,-6]:[0,-8];
-    marker.bindTooltip(seasonLabel,{permanent:true,direction:'top',offset:ttOff,className:'season-tip'});
+    const seasonLabel=ss===3?(getHighlightText(c)||'🔥今が旬'):(getHighlightText(c)?'✨'+getHighlightText(c):null);
+    if(seasonLabel){
+      const ttOff=bm?[0,-6]:[0,-8];
+      marker.bindTooltip(seasonLabel,{permanent:true,direction:'top',offset:ttOff,className:'season-tip'});
+    }
     /* pulse overlay */
     if(seasonPulseLayer){
       const pulseIcon=L.divIcon({
@@ -1033,7 +1036,7 @@ function course_season_icon(ss){return ss===3?'🔥':ss===2?'✨':'';}
 
 function seasonReason(c,ss){
   if(ss===3){const hl=getHighlightText(c);return hl?`<br><span style="color:#e65100;font-weight:600">💡 ${hl}</span>`:''}
-  if(ss===2) return `<br><span style="color:#2e7d32;font-weight:600">💡 シーズン（${c.season}）の見頃時期です</span>`;
+  if(ss===2){const hl2=getHighlightText(c);return hl2?`<br><span style="color:#2e7d32;font-weight:600">💡 ${hl2}</span>`:''}
   return '';
 }
 
@@ -1560,7 +1563,7 @@ function renderCard(c,color){
   const hl=getHighlightText(c);
   let siHtml='';
   if(ss===3) siHtml=`<div class="season-indicator"><span class="si-badge si-highlight">🔥 今が旬！</span><span class="highlight-text">${hl}</span></div>`;
-  else if(ss===2) siHtml=`<div class="season-indicator"><span class="si-badge si-best">✨ ベストシーズン</span></div>`;
+  else if(ss===2&&hl) siHtml=`<div class="season-indicator"><span class="si-badge si-best">✨ ${hl}</span></div>`;
   const nm=c.name.replace(/'/g,"\\'");
   const tags=Array.isArray(c.tags)?c.tags:[];
   return `<div class="card" onclick="panToMarker('${nm}')">
