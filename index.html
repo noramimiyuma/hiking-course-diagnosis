@@ -458,7 +458,7 @@
   </div>
 </div>
 
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v27</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v28</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -1169,11 +1169,12 @@ function toggleBookmark(name){
   const idx=bm.indexOf(name);
   if(idx===-1) bm.push(name); else bm.splice(idx,1);
   saveBookmarks(bm);
-  updateBookmarkUI(name);
+  /* 1) badge + pulse + panel list — always run regardless of marker rebuild */
   updateBookmarkBadge();
   flashBookmarkButton();
-  /* always refresh right panel list (use rAF so DOM settles first) */
-  requestAnimationFrame(()=>{ if(rightPanelOpen) renderRpBookmarks(); });
+  if(rightPanelOpen) renderRpBookmarks();
+  /* 2) marker / popup UI — may trigger popup rebuild, run last */
+  try{ updateBookmarkUI(name); }catch(e){ console.warn('updateBookmarkUI error',e); }
 }
 function flashBookmarkButton(){
   const btn=document.getElementById('map-bm-ctrl');
