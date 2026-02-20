@@ -464,9 +464,10 @@
   </div>
 </div>
 
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v36</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v37</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
 <script>
 /* SmoothWheelZoom — _move() based for true smooth zoom.
    Uses Leaflet's _move() for real rendering each frame (no CSS hack).
@@ -722,14 +723,26 @@ function addLayerControl(map){
       L.DomEvent.disableClickPropagation(d);L.DomEvent.disableScrollPropagation(d);
       let cur=L.tileLayer(TILE_LAYERS.satellite.url,TILE_LAYERS.satellite.opts).addTo(map);
       let labelLayer=L.tileLayer(LABEL_OVERLAY.url,LABEL_OVERLAY.opts).addTo(map);
+      let prefBorderLayer=null;
+      /* load prefecture borders (TopoJSON → GeoJSON, thin white lines) */
+      fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.topojson')
+        .then(r=>r.json()).then(topo=>{
+          const geo=topojson.feature(topo,topo.objects.japan);
+          prefBorderLayer=L.geoJSON(geo,{style:{color:'rgba(255,255,255,0.55)',weight:1.5,fill:false},interactive:false}).addTo(map);
+        }).catch(()=>{});
       function switchTo(k){
         if(!TILE_LAYERS[k])return;
         d.querySelectorAll('.gmap-layer-btn').forEach(x=>x.classList.remove('active'));
         const ab=d.querySelector(`[data-layer="${k}"]`);if(ab)ab.classList.add('active');
         map.removeLayer(cur);cur=L.tileLayer(TILE_LAYERS[k].url,TILE_LAYERS[k].opts).addTo(map);cur.bringToBack();
-        /* satellite: add label overlay / others: remove */
-        if(k==='satellite'){if(!map.hasLayer(labelLayer)){labelLayer=L.tileLayer(LABEL_OVERLAY.url,LABEL_OVERLAY.opts).addTo(map);}}
-        else{if(map.hasLayer(labelLayer)) map.removeLayer(labelLayer);}
+        /* satellite: add label + border overlays / others: remove */
+        if(k==='satellite'){
+          if(!map.hasLayer(labelLayer)){labelLayer=L.tileLayer(LABEL_OVERLAY.url,LABEL_OVERLAY.opts).addTo(map);}
+          if(prefBorderLayer&&!map.hasLayer(prefBorderLayer)) prefBorderLayer.addTo(map);
+        } else {
+          if(map.hasLayer(labelLayer)) map.removeLayer(labelLayer);
+          if(prefBorderLayer&&map.hasLayer(prefBorderLayer)) map.removeLayer(prefBorderLayer);
+        }
       }
       window._switchTileLayer=switchTo;
       d.addEventListener('click',e=>{
