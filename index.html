@@ -420,7 +420,7 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v16</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v17</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -980,7 +980,11 @@ function createMarker(c,color){
     <div class="map-popup-meta">${catLabel}・${c.difficulty}<br>📍 ${prefStr}<br>⏱️ ${c.time}・📏 ${c.elevation}<br>📅 ${c.season}</div>
     ${desc?`<div style="font-size:11px;color:#444;line-height:1.5;margin-top:4px;border-top:1px solid #eee;padding-top:4px">📝 ${desc}</div>`:''}
     ${(sl||reason)?`<div class="map-popup-season">${sl}${reason}</div>`:''}
-    <a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a><button class="popup-bm-btn${bm?' saved':''}" data-course="${c.name}" onclick="toggleBookmarkFromPopup('${nmEsc}')">${BM_SVG}${bm?' 保存済み':' 保存'}</button>`;
+    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
+      <a href="${searchUrl}" target="_blank" rel="noopener" style="padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a>
+      <button class="popup-bm-btn${bm?' saved':''}" data-course="${c.name}" onclick="toggleBookmarkFromPopup('${nmEsc}')">${BM_SVG}${bm?' 保存済み':' 保存'}</button>
+    </div>
+    <button onclick="reportWrongLocation('${nmEsc}')" style="display:block;margin-top:6px;padding:3px 8px;background:none;border:1px solid #bbb;border-radius:4px;color:#888;font-size:10px;cursor:pointer;width:100%;text-align:center">⚠️ 位置が違う場合はこちら</button>`;
   }
   const bm=isBookmarked(c.name);
   let marker;
@@ -1080,6 +1084,36 @@ function updateBookmarkBadge(){
 }
 /* called from popup via global */
 window.toggleBookmarkFromPopup=function(name){toggleBookmark(name);};
+
+/* ── 位置報告 (Google Form) ── */
+/* Google FormのIDとEntry IDを設定すると、フォームへの自動入力リンクが生成されます */
+/* 未設定の場合は GitHub Issue で代替します */
+const REPORT_FORM_ID='';  // Google FormのID（空ならGitHub Issue使用）
+const REPORT_ENTRY_NAME='';   // コース名フィールドのentry ID
+const REPORT_ENTRY_COORDS=''; // 現在座標フィールドのentry ID
+
+function reportWrongLocation(name){
+  const c=filteredCourses.find(x=>x.name===name)||getAllCourses().find(x=>x.name===name);
+  let coords='';
+  if(c){
+    const loc=getCourseLocation(c);
+    if(loc) coords=`${loc.lat}, ${loc.lng}`;
+  }
+  let url;
+  if(REPORT_FORM_ID){
+    /* Google Form 経由 */
+    const params=new URLSearchParams();
+    if(REPORT_ENTRY_NAME) params.set(REPORT_ENTRY_NAME, name);
+    if(REPORT_ENTRY_COORDS && coords) params.set(REPORT_ENTRY_COORDS, coords);
+    url=`https://docs.google.com/forms/d/e/${REPORT_FORM_ID}/viewform?usp=pp_url&${params.toString()}`;
+  } else {
+    /* GitHub Issue 経由（フォールバック） */
+    const title=encodeURIComponent(`位置修正: ${name}`);
+    const body=encodeURIComponent(`## コース名\n${name}\n\n## 現在の登録座標\n${coords||'不明'}\n\n## 正しい位置（わかれば）\nGoogle Maps のリンクや座標を記入してください\n\n## 備考\n`);
+    url=`https://github.com/noramimiyuma/hiking-course-diagnosis/issues/new?title=${title}&body=${body}&labels=location-fix`;
+  }
+  window.open(url,'_blank','noopener');
+}
 
 function toggleBookmarkView(){
   bookmarkMode=!bookmarkMode;
