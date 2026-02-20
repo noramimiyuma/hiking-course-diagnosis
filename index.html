@@ -486,11 +486,8 @@ L.Map.SmoothWheelZoom=L.Handler.extend({
     this._centerPoint=map.getSize()._divideBy(2);
     this._wheelStartLatLng=map.containerPointToLatLng(this._wheelMousePosition);
     var delta=this._wheelMousePosition.subtract(this._centerPoint);
-    if(delta.x===0&&delta.y===0){
-      this._zoomAnimationId=requestAnimationFrame(this._updateWheelZoom.bind(this));
-      return;
-    }
-    if(map.options.smoothWheelZoom==='center'){
+    /* When mouse is at center (delta=0,0) or 'center' mode, zoom around map center */
+    if(delta.x===0&&delta.y===0||map.options.smoothWheelZoom==='center'){
       this._center=map.containerPointToLatLng(this._centerPoint);
     }else{
       this._center=map.unproject(map.project(this._wheelStartLatLng,this._zoom).subtract(delta),this._zoom);
