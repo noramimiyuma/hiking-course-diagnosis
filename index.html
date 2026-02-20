@@ -458,7 +458,7 @@
   </div>
 </div>
 
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v25</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v26</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -744,21 +744,7 @@ function addLegendControl(map){
 }
 
 /* ============ BOOKMARK MAP CONTROL ============ */
-function addBookmarkMapControl(map){
-  const C=L.Control.extend({
-    options:{position:'topright'},
-    onAdd:function(){
-      const btn=L.DomUtil.create('button','map-bm-ctrl');
-      btn.id='map-bm-ctrl';
-      btn.innerHTML='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span class="map-bm-badge" id="map-bm-badge"></span>';
-      btn.title='ブックマーク';
-      L.DomEvent.disableClickPropagation(btn);
-      L.DomEvent.on(btn,'click',toggleRightPanel);
-      return btn;
-    }
-  });
-  new C().addTo(map);
-}
+/* Bookmark button is now injected into addGeoControl's bottomright wrap */
 
 /* ============ RIGHT PANEL ============ */
 let rightPanelOpen=false;
@@ -867,6 +853,8 @@ function initApp(){
   applyFilters();
   setupMobile();
   updateBookmarkBadge();
+  /* PC: open bookmark panel by default */
+  if(window.innerWidth>768) openRightPanel();
   window.addEventListener('resize',()=>{if(mainMap)mainMap.invalidateSize();});
 }
 
@@ -876,7 +864,6 @@ function initMainMap(){
   addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
-  addBookmarkMapControl(mainMap);
   seasonPulseLayer=L.layerGroup().addTo(mainMap);
   markerLayer=L.layerGroup().addTo(mainMap);
   mainMap.on('moveend',()=>{
@@ -890,6 +877,13 @@ function addGeoControl(map){
     onAdd(){
       const wrap=L.DomUtil.create('div','');
       wrap.style.cssText='display:flex;flex-direction:column;align-items:flex-end;gap:8px';
+      /* bookmark button */
+      const bmBtn=L.DomUtil.create('button','map-bm-ctrl',wrap);
+      bmBtn.id='map-bm-ctrl';
+      bmBtn.innerHTML='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span class="map-bm-badge" id="map-bm-badge"></span>';
+      bmBtn.title='ブックマーク';
+      L.DomEvent.disableClickPropagation(bmBtn);
+      L.DomEvent.on(bmBtn,'click',toggleRightPanel);
       /* mobile layer toggle */
       const layerWrap=L.DomUtil.create('div','mob-layer-toggle',wrap);
       layerWrap.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 12 2 23 6 12 10"/><polyline points="1 6 1 12 12 16 23 12 23 6"/><polyline points="1 12 1 18 12 22 23 18 23 12"/></svg><div class="mob-layer-balloon" id="mob-layer-balloon"><button class="mob-layer-opt" data-layer="terrain">🗻 地形</button><button class="mob-layer-opt" data-layer="standard">🗺️ 地図</button><button class="mob-layer-opt active" data-layer="satellite">🛰️ 衛星</button></div>';
@@ -1173,13 +1167,12 @@ function isBookmarked(name){return getBookmarks().includes(name);}
 function toggleBookmark(name){
   const bm=getBookmarks();
   const idx=bm.indexOf(name);
-  const isAdding=idx===-1;
-  if(isAdding) bm.push(name); else bm.splice(idx,1);
+  if(idx===-1) bm.push(name); else bm.splice(idx,1);
   saveBookmarks(bm);
   updateBookmarkUI(name);
   updateBookmarkBadge();
   if(rightPanelOpen) renderRpBookmarks();
-  if(isAdding) flashBookmarkButton();
+  flashBookmarkButton();
 }
 function flashBookmarkButton(){
   const btn=document.getElementById('map-bm-ctrl');
@@ -1188,7 +1181,6 @@ function flashBookmarkButton(){
   void btn.offsetWidth;
   btn.classList.add('pulse');
   btn.addEventListener('animationend',()=>btn.classList.remove('pulse'),{once:true});
-  if(rightPanelOpen) renderRpBookmarks();
 }
 const BM_SVG='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
 function updateBookmarkUI(name){
