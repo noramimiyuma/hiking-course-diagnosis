@@ -423,86 +423,9 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* SmoothWheelZoom — based on mutsuyuki/Leaflet.SmoothWheelZoom.
-   Patched: before any external setView/flyTo, call
-   map.smoothWheelZoom._forceStop() to cleanly end the rAF cycle
-   and reset Leaflet internal zoom/move flags.  */
-L.Map.mergeOptions({smoothWheelZoom:true,smoothSensitivity:1});
-L.Map.SmoothWheelZoom=L.Handler.extend({
-  addHooks:function(){L.DomEvent.on(this._map._container,'wheel',this._onWheelScroll,this);},
-  removeHooks:function(){L.DomEvent.off(this._map._container,'wheel',this._onWheelScroll,this);},
-  /* Call this before any programmatic setView / flyTo to cleanly stop */
-  _forceStop:function(){
-    if(this._zoomAnimationId){cancelAnimationFrame(this._zoomAnimationId);this._zoomAnimationId=null;}
-    clearTimeout(this._timeoutId);
-    if(this._moved){this._map._moveEnd(true);this._moved=false;}
-    this._isWheeling=false;
-    this._goalZoom=null;
-  },
-  _onWheelScroll:function(e){
-    if(!this._isWheeling) this._onWheelStart(e);
-    this._onWheeling(e);
-  },
-  _onWheelStart:function(e){
-    var map=this._map;
-    this._isWheeling=true;
-    this._wheelMousePosition=map.mouseEventToContainerPoint(e);
-    this._centerPoint=map.getSize()._divideBy(2);
-    this._startLatLng=map.containerPointToLatLng(this._centerPoint);
-    this._wheelStartLatLng=map.containerPointToLatLng(this._wheelMousePosition);
-    this._startZoom=map.getZoom();
-    this._moved=false;
-    this._zooming=true;
-    map._stop();
-    if(map._panAnim) map._panAnim.stop();
-    this._goalZoom=map.getZoom();
-    this._prevCenter=map.getCenter();
-    this._prevZoom=map.getZoom();
-    this._zoomAnimationId=requestAnimationFrame(this._updateWheelZoom.bind(this));
-  },
-  _onWheeling:function(e){
-    var map=this._map;
-    this._goalZoom=this._goalZoom+L.DomEvent.getWheelDelta(e)*0.003*map.options.smoothSensitivity;
-    if(this._goalZoom<map.getMinZoom()||this._goalZoom>map.getMaxZoom()){
-      this._goalZoom=map._limitZoom(this._goalZoom);
-    }
-    this._wheelMousePosition=this._map.mouseEventToContainerPoint(e);
-    clearTimeout(this._timeoutId);
-    this._timeoutId=setTimeout(this._onWheelEnd.bind(this),200);
-    L.DomEvent.preventDefault(e);
-    L.DomEvent.stopPropagation(e);
-  },
-  _onWheelEnd:function(){
-    this._isWheeling=false;
-    cancelAnimationFrame(this._zoomAnimationId);this._zoomAnimationId=null;
-    this._map._moveEnd(true);
-    this._moved=false;
-  },
-  _updateWheelZoom:function(){
-    var map=this._map;
-    if(!this._isWheeling){return;} /* stopped externally */
-    this._zoom=map.getZoom()+(this._goalZoom-map.getZoom())*0.3;
-    this._zoom=Math.floor(this._zoom*100)/100;
-    this._centerPoint=map.getSize()._divideBy(2);
-    this._wheelStartLatLng=map.containerPointToLatLng(this._wheelMousePosition);
-    var delta=this._wheelMousePosition.subtract(this._centerPoint);
-    /* When mouse is at center (delta=0,0) or 'center' mode, zoom around map center */
-    if(delta.x===0&&delta.y===0||map.options.smoothWheelZoom==='center'){
-      this._center=map.containerPointToLatLng(this._centerPoint);
-    }else{
-      this._center=map.unproject(map.project(this._wheelStartLatLng,this._zoom).subtract(delta),this._zoom);
-    }
-    if(!this._moved){
-      map._moveStart(true,false);
-      this._moved=true;
-    }
-    map._move(this._center,this._zoom);
-    this._prevCenter=map.getCenter();
-    this._prevZoom=map.getZoom();
-    this._zoomAnimationId=requestAnimationFrame(this._updateWheelZoom.bind(this));
-  }
-});
-L.Map.addInitHook('addHandler','smoothWheelZoom',L.Map.SmoothWheelZoom);
+/* No SmoothWheelZoom plugin — use Leaflet's native scrollWheelZoom
+   with zoomSnap:0 for continuous zoom. This avoids deadlock issues
+   with _moveStart/_moveEnd and is much lighter on rendering. */
 </script>
 <script src="mountains.js?v=20260217u"></script>
 <script>
@@ -585,7 +508,6 @@ function applyGeoResult(lat,lng,accuracy,approx){
       radius:accuracy,fillColor:'#1565c0',fillOpacity:0.08,color:'#1565c0',weight:1,opacity:0.3,interactive:false
     }).addTo(mainMap);
   }
-  if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();
   mainMap.setView([lat,lng],approx?8:10,{animate:true});
   geoToast(approx?'おおよその現在地から近い順に並べ替えました':'現在地から近い順に並べ替えました');
   applyFilters();
@@ -735,7 +657,7 @@ function initApp(){
 
 function initMainMap(){
   const canvasRenderer=L.canvas({padding:0.5});
-  mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true,zoomSnap:0,scrollWheelZoom:false,smoothWheelZoom:true,smoothSensitivity:3}).setView([36.2,138.25],5);
+  mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true,zoomSnap:0,zoomDelta:0.25,wheelDebounceTime:40,wheelPxPerZoomLevel:120}).setView([36.2,138.25],5);
   addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
@@ -942,18 +864,23 @@ function updateVisibleMarkers(){
     if(courseMarkerMap.has(c.name)) return; // already on map
     const color=EQ_COLORS[getEquipmentCategory(c.difficulty)]||"#c62828";
     const marker=createMarker(c,color);
+    if(!marker) return;
     markerLayer.addLayer(marker);
     courseMarkerMap.set(c.name,marker);
   });
   /* if panToMarker set a pending name, open its popup */
   if(_pendingPopupName){
     const mk=courseMarkerMap.get(_pendingPopupName);
-    if(mk){mk.openPopup({autoPan:false});_pendingPopupName=null;}
+    if(mk){
+      const p=mk.getPopup();if(p)p.options.autoPan=false;
+      mk.openPopup();_pendingPopupName=null;
+    }
   }
 }
 
 function createMarker(c,color){
   const loc=getCourseLocation(c);
+  if(!loc||!loc.lat||!loc.lng) return null;
   const ss=getSeasonScore(c);
   const isSeason=ss>=2;
   const r=isSeason?7:5;
@@ -1172,8 +1099,6 @@ function panToMarker(name){
   /* mobile: collapse full sheet to peek so the map is visible */
   if(window.innerWidth<=768&&sheetStop==='full') setSheetPosition('peek',true);
   const loc=getCourseLocation(c);if(!loc)return;
-  /* Cleanly stop any in-progress smooth zoom before programmatic setView */
-  if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();
   mainMap.setView([loc.lat,loc.lng],12,{animate:false});
   /* Cancel any pending debounced updateVisibleMarkers from the moveend above,
      then run it ourselves so we have full control of the timing. */
@@ -1184,12 +1109,15 @@ function panToMarker(name){
   if(!courseMarkerMap.has(name)){
     const color=EQ_COLORS[getEquipmentCategory(c.difficulty||'散策')]||'#c62828';
     const marker=createMarker(c,color);
-    markerLayer.addLayer(marker);courseMarkerMap.set(name,marker);
+    if(marker){markerLayer.addLayer(marker);courseMarkerMap.set(name,marker);}
   }
   /* Open the popup after a short delay so the DOM has settled */
   setTimeout(()=>{
     const mk=courseMarkerMap.get(name);
-    if(mk){mk.openPopup({autoPan:false});_pendingPopupName=null;}
+    if(mk){
+      const p=mk.getPopup();if(p)p.options.autoPan=false;
+      mk.openPopup();_pendingPopupName=null;
+    }
   },80);
 }
 function highlightCard(name){
@@ -1215,7 +1143,6 @@ function switchSidebarView(id){
 function backToLanding(){
   switchSidebarView('sb-landing');
   applyFilters();
-  if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();
   mainMap.setView([36.2,138.25],5,{animate:true});
 }
 
@@ -1597,8 +1524,8 @@ function showDiagnosisResult(){
   const center=PREF_CENTER[selectedPref]||{lat:36.2,lng:138.25};
   const bounds=[];
   markerLayer.eachLayer(m=>{if(m.getLatLng)bounds.push(m.getLatLng());});
-  if(bounds.length>0){if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();mainMap.fitBounds(L.latLngBounds(bounds),{padding:[30,30],maxZoom:11});}
-  else{if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();mainMap.setView([center.lat,center.lng],9,{animate:true});}
+  if(bounds.length>0) mainMap.fitBounds(L.latLngBounds(bounds),{padding:[30,30],maxZoom:11});
+  else mainMap.setView([center.lat,center.lng],9,{animate:true});
   }catch(e){
     console.error('診断結果表示エラー:',e);
     document.getElementById('sb-result').innerHTML=`<div class="r-sec"><button class="sb-back" onclick="backToLanding()">← コース地図に戻る</button><p style="padding:20px;color:#c62828">⚠️ 結果の表示中にエラーが発生しました。もう一度お試しください。</p><button class="btn-restart" onclick="startQuiz()">📋 もう一度診断する</button></div>`;
