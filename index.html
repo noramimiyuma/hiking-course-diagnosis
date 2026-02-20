@@ -673,12 +673,12 @@ function getAllCourses(){
   for(const[rk,rv] of Object.entries(mountainDB)){
     for(const lv of["entry","beginner","intermediate","advanced","expert"]){
       const d=rv[lv];if(!d) continue;
-      (d.popular||[]).forEach(c=>{if(!seen.has(c.name)){seen.add(c.name);all.push({...c,_category:c.niche?"niche":"popular",_level:lv});}});
-      (d.niche||[]).forEach(c=>{if(!seen.has(c.name)){seen.add(c.name);all.push({...c,_category:"niche",_level:lv});}});
+      (d.popular||[]).forEach(c=>{if(!c||!c.name)return;if(!seen.has(c.name)){seen.add(c.name);all.push({...c,_category:c.niche?"niche":"popular",_level:lv});}});
+      (d.niche||[]).forEach(c=>{if(!c||!c.name)return;if(!seen.has(c.name)){seen.add(c.name);all.push({...c,_category:"niche",_level:lv});}});
     }
   }
   for(const[pref,courses] of Object.entries(prefStrollDB)){
-    courses.forEach(c=>{if(!seen.has(c.name)){seen.add(c.name);all.push({...c,pref:pref,_category:"stroll",_level:"stroll"});}});
+    courses.forEach(c=>{if(!c||!c.name)return;if(!seen.has(c.name)){seen.add(c.name);all.push({...c,pref:pref,_category:"stroll",_level:"stroll"});}});
   }
   allCoursesCache=all;
   return all;
@@ -1433,12 +1433,12 @@ function getNearbyPrefExtras(pref,level){
   adjPrefs.forEach(ap=>{
     for(const[rk,rv] of Object.entries(mountainDB)){
       const d=rv[level];if(!d) continue;
-      const all=[...(d.popular||[]),...(d.niche||[])].filter(c=>matchPref(c,ap));
+      const all=[...(d.popular||[]),...(d.niche||[])].filter(c=>c&&c.name&&matchPref(c,ap));
       if(all.length>0){const pick=all[Math.floor(Math.random()*all.length)];extras.push({...pick,_fromPref:ap});}
     }
   });
   adjPrefs.forEach(ap=>{
-    const s=prefStrollDB[ap]||[];
+    const s=(prefStrollDB[ap]||[]).filter(c=>c&&c.name);
     if(s.length>0){const pick=s[Math.floor(Math.random()*s.length)];extras.push({...pick,_fromPref:ap});}
   });
   return dedup(extras).slice(0,6);
@@ -1446,7 +1446,8 @@ function getNearbyPrefExtras(pref,level){
 
 // ============ RESULT ============
 function renderCard(c,color){
-  const eqCat=getEquipmentCategory(c.difficulty);
+  if(!c||!c.name) return '';
+  const eqCat=getEquipmentCategory(c.difficulty||'散策');
   const headerColor=eqCat==="casual"?"linear-gradient(135deg,#00796b,#26a69a)":"linear-gradient(135deg,#b71c1c,#c62828)";
   const badge=eqCat==="casual"?'<span class="stroll-b">👟 私服OK</span>':'<span class="niche-b">🥾 登山装備</span>';
   const ss=getSeasonScore(c);
@@ -1455,17 +1456,18 @@ function renderCard(c,color){
   if(ss===3) siHtml=`<div class="season-indicator"><span class="si-badge si-highlight">🔥 今が旬！</span><span class="highlight-text">${hl}</span></div>`;
   else if(ss===2) siHtml=`<div class="season-indicator"><span class="si-badge si-best">✨ ベストシーズン</span></div>`;
   const nm=c.name.replace(/'/g,"\\'");
+  const tags=Array.isArray(c.tags)?c.tags:[];
   return `<div class="card" onclick="panToMarker('${nm}')">
     <div class="card-h" style="background:${headerColor}">
       <h3>${c.name}${badge}${ss===3?'<span class="now-tag">NOW</span>':''}</h3>
-      <span class="diff-tag">${c.difficulty}</span>
+      <span class="diff-tag">${c.difficulty||''}</span>
     </div>
     <div class="card-b">
       ${siHtml}
-      <div class="c-meta"><span>⏱️ ${c.time}</span><span>📏 ${c.elevation}</span><span>📅 ${c.season}</span></div>
-      <div class="c-tags">${c.tags.map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join("")}</div>
-      <p class="c-desc">${c.description}</p>
-      <div class="c-tips"><strong>💡 ツウ情報：</strong>${c.tips}</div>
+      <div class="c-meta"><span>⏱️ ${c.time||'-'}</span><span>📏 ${c.elevation||'-'}</span><span>📅 ${c.season||'-'}</span></div>
+      <div class="c-tags">${tags.map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join("")}</div>
+      <p class="c-desc">${c.description||''}</p>
+      ${c.tips?`<div class="c-tips"><strong>💡 ツウ情報：</strong>${c.tips}</div>`:''}
     </div>
   </div>`;
 }
@@ -1491,18 +1493,19 @@ function buildSeasonPanel(region,level){
 
 function showDiagnosisResult(){
   switchSidebarView('sb-result');
+  try{
   const level=getLevel(totalScore);
-  const meta=LEVEL_META[level];
+  const meta=LEVEL_META[level]||{level:'入門',badgeClass:'level-entry',message:'あなたにぴったりのコースを探しましょう！'};
   const color=LEVEL_COLORS[level];
 
   let pop=[],niche=[];
   for(const[rk,rv] of Object.entries(mountainDB)){
     const d=rv[level];if(!d) continue;
-    pop.push(...(d.popular||[]).filter(c=>matchPref(c,selectedPref)));
-    niche.push(...(d.niche||[]).filter(c=>matchPref(c,selectedPref)));
+    pop.push(...(d.popular||[]).filter(c=>c&&c.name&&matchPref(c,selectedPref)));
+    niche.push(...(d.niche||[]).filter(c=>c&&c.name&&matchPref(c,selectedPref)));
   }
   pop=dedup(pop);niche=dedup(niche);
-  const strolls=prefStrollDB[selectedPref]||[];
+  const strolls=(prefStrollDB[selectedPref]||[]).filter(c=>c&&c.name);
   const nearby=getNearbyPrefExtras(selectedPref,level);
 
   const allLocal=[...pop,...niche,...strolls];
@@ -1535,9 +1538,9 @@ function showDiagnosisResult(){
 
   // Update map to show only diagnosis results
   resetAllMarkers();
-  const allDiag=[...pop,...niche,...strolls,...nearby];
+  const allDiag=[...pop,...niche,...strolls,...nearby].filter(c=>c&&c.name);
   allDiag.forEach(c=>{
-    const clr=c._fromPref?'#1565c0':EQ_COLORS[getEquipmentCategory(c.difficulty)]||'#c62828';
+    const clr=c._fromPref?'#1565c0':EQ_COLORS[getEquipmentCategory(c.difficulty||'散策')]||'#c62828';
     const loc=getCourseLocation(c);if(!loc)return;
     const m=createMarker(c,clr);
     markerLayer.addLayer(m);courseMarkerMap.set(c.name,m);
@@ -1547,6 +1550,10 @@ function showDiagnosisResult(){
   markerLayer.eachLayer(m=>{if(m.getLatLng)bounds.push(m.getLatLng());});
   if(bounds.length>0) mainMap.fitBounds(L.latLngBounds(bounds),{padding:[30,30],maxZoom:11});
   else mainMap.setView([center.lat,center.lng],9,{animate:true});
+  }catch(e){
+    console.error('診断結果表示エラー:',e);
+    document.getElementById('sb-result').innerHTML=`<div class="r-sec"><button class="sb-back" onclick="backToLanding()">← コース地図に戻る</button><p style="padding:20px;color:#c62828">⚠️ 結果の表示中にエラーが発生しました。もう一度お試しください。</p><button class="btn-restart" onclick="startQuiz()">📋 もう一度診断する</button></div>`;
+  }
 }
 
 // ============ BOOT ============
