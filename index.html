@@ -420,7 +420,7 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v17</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v18</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -984,7 +984,7 @@ function createMarker(c,color){
       <a href="${searchUrl}" target="_blank" rel="noopener" style="padding:5px 12px;background:#1a73e8;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">🔍 詳細を調べる</a>
       <button class="popup-bm-btn${bm?' saved':''}" data-course="${c.name}" onclick="toggleBookmarkFromPopup('${nmEsc}')">${BM_SVG}${bm?' 保存済み':' 保存'}</button>
     </div>
-    <button onclick="reportWrongLocation('${nmEsc}')" style="display:block;margin-top:6px;padding:3px 8px;background:none;border:1px solid #bbb;border-radius:4px;color:#888;font-size:10px;cursor:pointer;width:100%;text-align:center">⚠️ 位置が違う場合はこちら</button>`;
+    <div style="text-align:right;margin-top:4px"><a href="javascript:void(0)" onclick="reportWrongLocation('${nmEsc}')" style="color:#aaa;font-size:10px;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">位置の間違いを報告</a></div>`;
   }
   const bm=isBookmarked(c.name);
   let marker;
