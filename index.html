@@ -451,7 +451,13 @@ L.Map.SmoothWheelZoom=L.Handler.extend({
   _onWheelEnd:function(){this._isWheeling=false;cancelAnimationFrame(this._zoomAnimationId);this._map._moveEnd(true)},
   _updateWheelZoom:function(){
     var map=this._map;
-    if(!map.getCenter().equals(this._prevCenter)||map.getZoom()!=this._prevZoom)return;
+    if(!map.getCenter().equals(this._prevCenter)||map.getZoom()!=this._prevZoom){
+      this._prevCenter=map.getCenter();this._prevZoom=map.getZoom();
+      this._startLatLng=map.containerPointToLatLng(this._centerPoint);
+      this._wheelStartLatLng=map.containerPointToLatLng(this._wheelMousePosition);
+      this._startZoom=map.getZoom();this._goalZoom=map.getZoom();
+      this._zoomAnimationId=requestAnimationFrame(this._updateWheelZoom.bind(this));return;
+    }
     this._zoom=map.getZoom()+(this._goalZoom-map.getZoom())*0.3;
     this._zoom=Math.floor(this._zoom*100)/100;
     var delta=this._wheelMousePosition.subtract(this._centerPoint);
@@ -1132,16 +1138,16 @@ function panToMarker(name){
   /* mobile: collapse full sheet to peek so the map is visible */
   if(window.innerWidth<=768&&sheetStop==='full') setSheetPosition('peek',true);
   const loc=getCourseLocation(c);if(!loc)return;
-  mainMap.setView([loc.lat,loc.lng],12,{animate:true});
+  /* stop any in-progress animations to prevent SmoothWheelZoom conflicts */
+  mainMap.stop();
+  mainMap.setView([loc.lat,loc.lng],12,{animate:true,duration:0.5});
   /* open popup after all moveend/updateVisibleMarkers settle */
   const tryOpen=()=>{
     const mk=courseMarkerMap.get(name);
     if(mk){mk.openPopup();_pendingPopupName=null;}
   };
   mainMap.once('moveend',()=>{
-    clearTimeout(visibleUpdateTimer);
-    updateVisibleMarkers();
-    setTimeout(tryOpen,50);
+    setTimeout(()=>{updateVisibleMarkers();setTimeout(tryOpen,50);},50);
   });
 }
 function highlightCard(name){
