@@ -107,15 +107,6 @@
     .sb-ccard-bm svg{width:16px;height:16px;fill:none;stroke:rgba(255,255,255,.6);stroke-width:2}
     .sb-ccard-bm.saved svg{fill:#7c4dff;stroke:#7c4dff}
     .sb-more{text-align:center;color:#999;font-size:11px;padding:10px}
-    /* bookmark toggle tab */
-    .sb-bm-bar{padding:8px 16px 0;display:flex;align-items:center;gap:6px}
-    .sb-bm-toggle{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:18px;border:1.5px solid #e8ede8;background:#fff;font-size:12px;font-weight:600;color:#888;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none}
-    .sb-bm-toggle:hover{border-color:#7c4dff;color:#7c4dff}
-    .sb-bm-toggle.active{background:#ede7f6;border-color:#7c4dff;color:#5e35b1}
-    @keyframes bm-pulse{0%{box-shadow:0 0 0 0 rgba(124,77,255,.5)}70%{box-shadow:0 0 0 12px rgba(124,77,255,0)}100%{box-shadow:0 0 0 0 rgba(124,77,255,0)}}
-    .sb-bm-toggle.pulse{animation:bm-pulse .7s ease-out}
-    .sb-bm-count{font-size:10px;background:#7c4dff;color:#fff;border-radius:10px;padding:1px 6px;font-weight:700;min-width:16px;text-align:center}
-    .sb-bm-empty{text-align:center;color:#aaa;font-size:13px;padding:30px 16px;line-height:1.7}
     /* popup bookmark button */
     .popup-bm-btn{display:inline-flex;align-items:center;gap:3px;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#555;transition:all .15s;box-sizing:border-box}
     .popup-bm-btn:hover{border-color:#7c4dff;color:#7c4dff}
@@ -289,6 +280,35 @@
       .map-preset-wrap{display:none!important}
       .mob-layer-toggle{display:none!important}
     }
+
+    /* ========== RIGHT PANEL ========== */
+    .right-panel{width:340px;height:100vh;background:#fff;display:flex;flex-direction:column;box-shadow:-2px 0 12px rgba(0,0,0,.15);z-index:10;flex-shrink:0;transition:margin-right .3s ease;position:relative;overflow:hidden}
+    .right-panel.collapsed{margin-right:-340px}
+    .rp-header{padding:10px 12px;background:#fff;border-bottom:1px solid #e8ede8;display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .rp-tabs{display:flex;gap:4px;flex:1}
+    .rp-tab{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;border:1.5px solid #e8ede8;background:#fff;font-size:12px;font-weight:600;color:#888;cursor:pointer;transition:all .15s}
+    .rp-tab:hover{border-color:#7c4dff;color:#7c4dff}
+    .rp-tab.active{background:#ede7f6;border-color:#7c4dff;color:#5e35b1}
+    .rp-tab-count{font-size:10px;background:#7c4dff;color:#fff;border-radius:10px;padding:1px 6px;font-weight:700;min-width:16px;text-align:center}
+    .rp-close{background:none;border:none;font-size:20px;color:#999;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0}
+    .rp-close:hover{color:#555}
+    .rp-body{flex:1;overflow-y:auto;overflow-x:hidden}
+    .rp-content{padding:8px 12px;animation:fadeIn .25s ease}
+    .rp-placeholder{text-align:center;color:#aaa;font-size:13px;padding:40px 16px;line-height:1.7}
+    .rp-placeholder p{margin-top:8px}
+    /* map bookmark control */
+    .map-bm-ctrl{background:#fff;width:40px;height:40px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:#7c4dff;position:relative;transition:all .2s;padding:0}
+    .map-bm-ctrl:hover{background:#f5f0ff}
+    .map-bm-ctrl.active{background:#ede7f6;color:#5e35b1}
+    .map-bm-ctrl svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2}
+    .map-bm-badge{position:absolute;top:-4px;right:-4px;font-size:9px;background:#7c4dff;color:#fff;border-radius:10px;padding:1px 5px;font-weight:700;min-width:14px;text-align:center;line-height:1.4}
+    .map-bm-badge:empty{display:none}
+    @keyframes map-bm-pulse{0%{box-shadow:0 0 0 0 rgba(124,77,255,.5)}70%{box-shadow:0 0 0 12px rgba(124,77,255,0)}100%{box-shadow:0 0 0 0 rgba(124,77,255,0)}}
+    .map-bm-ctrl.pulse{animation:map-bm-pulse .7s ease-out}
+    @media(max-width:768px){
+      .right-panel,.right-panel.collapsed{position:fixed;top:0;right:0;bottom:0;width:100%;height:100%;z-index:200;margin-right:0;border-radius:0;box-shadow:-4px 0 20px rgba(0,0,0,.2);transform:translateX(100%);transition:transform .35s cubic-bezier(.2,.9,.3,1)}
+      .right-panel.open-mobile{transform:translateX(0)}
+    }
   </style>
 </head>
 <body>
@@ -324,9 +344,6 @@
           <input type="text" id="search-input" placeholder="コース名・見どころで検索…" oninput="onSearchInput(this.value)">
           <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
         </div>
-      </div>
-      <div class="sb-bm-bar" id="sb-bm-bar">
-        <button class="sb-bm-toggle" id="sb-bm-toggle" onclick="toggleBookmarkView()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> ブックマーク <span class="sb-bm-count" id="sb-bm-count">0</span></button>
       </div>
       <div class="sb-presets" id="sb-presets">
         <div class="preset-cat">
@@ -421,7 +438,27 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v24</div>
+
+<!-- RIGHT PANEL (bookmarks & saved diagnoses) -->
+<div id="right-panel" class="right-panel collapsed">
+  <div class="rp-header">
+    <div class="rp-tabs">
+      <button class="rp-tab active" data-tab="rp-bookmarks" onclick="switchRpTab(this)">🔖 ブックマーク <span class="rp-tab-count" id="rp-bm-count">0</span></button>
+      <button class="rp-tab" data-tab="rp-saved-diag" onclick="switchRpTab(this)">📋 診断結果</button>
+    </div>
+    <button class="rp-close" onclick="closeRightPanel()">✕</button>
+  </div>
+  <div class="rp-body">
+    <div id="rp-bookmarks" class="rp-content"></div>
+    <div id="rp-saved-diag" class="rp-content" style="display:none">
+      <div class="rp-placeholder">
+        <p>📋<br>診断結果の保存機能は<br>今後追加予定です</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v25</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -706,6 +743,103 @@ function addLegendControl(map){
   new C().addTo(map);
 }
 
+/* ============ BOOKMARK MAP CONTROL ============ */
+function addBookmarkMapControl(map){
+  const C=L.Control.extend({
+    options:{position:'topright'},
+    onAdd:function(){
+      const btn=L.DomUtil.create('button','map-bm-ctrl');
+      btn.id='map-bm-ctrl';
+      btn.innerHTML='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span class="map-bm-badge" id="map-bm-badge"></span>';
+      btn.title='ブックマーク';
+      L.DomEvent.disableClickPropagation(btn);
+      L.DomEvent.on(btn,'click',toggleRightPanel);
+      return btn;
+    }
+  });
+  new C().addTo(map);
+}
+
+/* ============ RIGHT PANEL ============ */
+let rightPanelOpen=false;
+
+function toggleRightPanel(){
+  if(rightPanelOpen) closeRightPanel(); else openRightPanel();
+}
+function openRightPanel(){
+  const rp=document.getElementById('right-panel');if(!rp)return;
+  const isMobile=window.innerWidth<=768;
+  rightPanelOpen=true;
+  if(isMobile){rp.classList.add('open-mobile');}
+  else{rp.classList.remove('collapsed');}
+  const ctrl=document.getElementById('map-bm-ctrl');
+  if(ctrl) ctrl.classList.add('active');
+  renderRpBookmarks();
+  if(!isMobile) setTimeout(()=>{if(mainMap) mainMap.invalidateSize();},350);
+}
+function closeRightPanel(){
+  const rp=document.getElementById('right-panel');if(!rp)return;
+  const isMobile=window.innerWidth<=768;
+  rightPanelOpen=false;
+  if(isMobile){rp.classList.remove('open-mobile');}
+  else{rp.classList.add('collapsed');}
+  const ctrl=document.getElementById('map-bm-ctrl');
+  if(ctrl) ctrl.classList.remove('active');
+  if(!isMobile) setTimeout(()=>{if(mainMap) mainMap.invalidateSize();},350);
+}
+function switchRpTab(tabBtn){
+  const tabId=tabBtn.dataset.tab;
+  document.querySelectorAll('.rp-tab').forEach(t=>t.classList.remove('active'));
+  tabBtn.classList.add('active');
+  document.querySelectorAll('.rp-content').forEach(c=>{
+    c.style.display=c.id===tabId?'':'none';
+  });
+  if(tabId==='rp-bookmarks') renderRpBookmarks();
+}
+function renderRpBookmarks(){
+  const el=document.getElementById('rp-bookmarks');if(!el)return;
+  const bm=getBookmarks();
+  if(!bm.length){
+    el.innerHTML='<div class="rp-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><p>まだブックマークがありません<br><span style="font-size:11px;color:#bbb">気になるコースの しおりマークをタップして保存しましょう</span></p></div>';
+    return;
+  }
+  const allC=getAllCourses();
+  const courses=bm.map(n=>allC.find(c=>c.name===n)).filter(Boolean);
+  if(userLocation){
+    courses.sort((a,b)=>{
+      const la=getCourseLocation(a),lb=getCourseLocation(b);
+      return haversineKm(userLocation.lat,userLocation.lng,la.lat,la.lng)-haversineKm(userLocation.lat,userLocation.lng,lb.lat,lb.lng);
+    });
+  } else {
+    courses.sort((a,b)=>getSeasonScore(b)-getSeasonScore(a));
+  }
+  el.innerHTML=courses.map(c=>{
+    const ss=getSeasonScore(c);
+    const eq=getEquipmentCategory(c.difficulty);
+    const eqL=EQ_LABELS[eq]||'';
+    const color=EQ_COLORS[getEquipmentCategory(c.difficulty)]||'#c62828';
+    const nm=c.name.replace(/'/g,"\\'");
+    const desc=c.description?c.description.length>50?c.description.slice(0,50)+'…':c.description:'';
+    let distHtml='';
+    if(userLocation){
+      const loc=getCourseLocation(c);
+      const km=haversineKm(userLocation.lat,userLocation.lng,loc.lat,loc.lng);
+      distHtml=`<span class="sb-ccard-dist">📍 ${formatDist(km)}</span>`;
+    }
+    return `<div class="sb-ccard" data-course="${c.name}" onclick="panToMarker('${nm}')">
+      <div class="sb-ccard-h" style="background:${color}">
+        <h4>${course_season_icon(ss)} ${c.name}</h4>
+        <span class="eq-tag">${eqL}</span>
+        <button class="sb-ccard-bm saved" onclick="event.stopPropagation();toggleBookmark('${nm}')"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
+      </div>
+      <div class="sb-ccard-b">
+        ${distHtml}<span>⏱️ ${c.time}</span><span>📏 ${c.elevation}</span><span>📅 ${c.season}</span>
+      </div>
+      ${desc?`<div class="sb-ccard-desc">📝 ${desc}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
 // ============ DIFF KEY MAP (for getAllCourses) ============
 const DIFF_KEY_MAP={"入門":"entry","初級":"beginner","中級":"intermediate","上級":"advanced","エキスパート":"expert","中級〜上級":"intermediate_advanced","散策":"stroll"};
 
@@ -742,6 +876,7 @@ function initMainMap(){
   addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
+  addBookmarkMapControl(mainMap);
   seasonPulseLayer=L.layerGroup().addTo(mainMap);
   markerLayer=L.layerGroup().addTo(mainMap);
   mainMap.on('moveend',()=>{
@@ -868,15 +1003,6 @@ function handleFilter(btn,group){
 
 function applyFilters(){
   if(!markerLayer)return;
-  /* exit bookmark mode if active */
-  if(bookmarkMode){
-    bookmarkMode=false;
-    const toggle=document.getElementById('sb-bm-toggle');
-    if(toggle) toggle.classList.remove('active');
-    document.getElementById('sb-presets').classList.remove('hidden');
-    document.querySelector('.sb-filters').classList.remove('hidden');
-    document.getElementById('filter-count').classList.remove('hidden');
-  }
   const courses=getAllCourses();
   const{equipment,duration}=activeFilters;
   filteredCourses=[];
@@ -1041,7 +1167,6 @@ function seasonReason(c,ss){
 }
 
 // ============ BOOKMARKS ============
-let bookmarkMode=false;
 function getBookmarks(){try{return JSON.parse(localStorage.getItem('bookmarks'))||[];}catch(e){return [];}}
 function saveBookmarks(arr){localStorage.setItem('bookmarks',JSON.stringify(arr));}
 function isBookmarked(name){return getBookmarks().includes(name);}
@@ -1053,21 +1178,17 @@ function toggleBookmark(name){
   saveBookmarks(bm);
   updateBookmarkUI(name);
   updateBookmarkBadge();
-  if(bookmarkMode) renderBookmarkList();
+  if(rightPanelOpen) renderRpBookmarks();
   if(isAdding) flashBookmarkButton();
 }
 function flashBookmarkButton(){
-  const isMobile=window.innerWidth<=768;
-  const wasClosed=isMobile&&sheetStop==='closed';
-  if(wasClosed) setSheetPosition('peek',true);
-  setTimeout(()=>{
-    const btn=document.getElementById('sb-bm-toggle');
-    if(!btn)return;
-    btn.classList.remove('pulse');
-    void btn.offsetWidth;
-    btn.classList.add('pulse');
-    btn.addEventListener('animationend',()=>btn.classList.remove('pulse'),{once:true});
-  },wasClosed?400:50);
+  const btn=document.getElementById('map-bm-ctrl');
+  if(!btn)return;
+  btn.classList.remove('pulse');
+  void btn.offsetWidth;
+  btn.classList.add('pulse');
+  btn.addEventListener('animationend',()=>btn.classList.remove('pulse'),{once:true});
+  if(rightPanelOpen) renderRpBookmarks();
 }
 const BM_SVG='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
 function updateBookmarkUI(name){
@@ -1088,8 +1209,10 @@ function updateBookmarkUI(name){
 }
 function updateBookmarkBadge(){
   const ct=getBookmarks().length;
-  const badge=document.getElementById('sb-bm-count');
-  if(badge) badge.textContent=ct;
+  const rpBadge=document.getElementById('rp-bm-count');
+  if(rpBadge) rpBadge.textContent=ct;
+  const mapBadge=document.getElementById('map-bm-badge');
+  if(mapBadge) mapBadge.textContent=ct||'';
 }
 /* called from popup via global */
 window.toggleBookmarkFromPopup=function(name){toggleBookmark(name);};
@@ -1128,34 +1251,6 @@ function reportWrongLocation(name){
     url=`https://github.com/noramimiyuma/hiking-course-diagnosis/issues/new?title=${title}&body=${body}&labels=location-fix`;
   }
   window.open(url,'_blank','noopener');
-}
-
-function toggleBookmarkView(){
-  bookmarkMode=!bookmarkMode;
-  const toggle=document.getElementById('sb-bm-toggle');
-  if(toggle) toggle.classList.toggle('active',bookmarkMode);
-  if(bookmarkMode){
-    renderBookmarkList();
-    document.getElementById('sb-presets').classList.add('hidden');
-    document.querySelector('.sb-filters').classList.add('hidden');
-    document.getElementById('filter-count').classList.add('hidden');
-  } else {
-    document.getElementById('sb-presets').classList.remove('hidden');
-    document.querySelector('.sb-filters').classList.remove('hidden');
-    document.getElementById('filter-count').classList.remove('hidden');
-    renderCourseList(filteredCourses);
-  }
-}
-function renderBookmarkList(){
-  const el=document.getElementById('sb-course-list');if(!el)return;
-  const bm=getBookmarks();
-  if(!bm.length){el.innerHTML='<div class="sb-bm-empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><br>まだブックマークがありません<br><span style="font-size:11px;color:#bbb">気になるコースのしおりマークをタップして保存しましょう</span></div>';return;}
-  const allC=getAllCourses();
-  const courses=bm.map(n=>allC.find(c=>c.name===n)).filter(Boolean);
-  /* render inline to avoid applyFilters resetting bookmarkMode */
-  const saved=bookmarkMode;
-  renderCourseList(courses);
-  bookmarkMode=saved;
 }
 
 // ============ COURSE LIST ============
@@ -1227,8 +1322,11 @@ function panToMarker(name){
   _pendingPopupName=name;
   const c=filteredCourses.find(x=>x.name===name)||getAllCourses().find(x=>x.name===name);
   if(!c||!mainMap)return;
-  /* mobile: collapse full sheet to peek so the map is visible */
-  if(window.innerWidth<=768&&sheetStop==='full') setSheetPosition('peek',true);
+  /* mobile: close right panel & collapse sheet to peek */
+  if(window.innerWidth<=768){
+    if(rightPanelOpen) closeRightPanel();
+    if(sheetStop==='full') setSheetPosition('peek',true);
+  }
   const loc=getCourseLocation(c);if(!loc)return;
   if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();
   mainMap.setView([loc.lat,loc.lng],12,{animate:false});
