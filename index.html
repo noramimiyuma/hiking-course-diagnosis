@@ -458,7 +458,7 @@
   </div>
 </div>
 
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v26</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v27</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -1171,16 +1171,22 @@ function toggleBookmark(name){
   saveBookmarks(bm);
   updateBookmarkUI(name);
   updateBookmarkBadge();
-  if(rightPanelOpen) renderRpBookmarks();
   flashBookmarkButton();
+  /* always refresh right panel list (use rAF so DOM settles first) */
+  requestAnimationFrame(()=>{ if(rightPanelOpen) renderRpBookmarks(); });
 }
 function flashBookmarkButton(){
   const btn=document.getElementById('map-bm-ctrl');
   if(!btn)return;
+  /* double-rAF guarantees the browser has fully removed the old animation
+     before re-adding the class, so the pulse plays every single time */
   btn.classList.remove('pulse');
-  void btn.offsetWidth;
-  btn.classList.add('pulse');
-  btn.addEventListener('animationend',()=>btn.classList.remove('pulse'),{once:true});
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      btn.classList.add('pulse');
+      btn.addEventListener('animationend',()=>btn.classList.remove('pulse'),{once:true});
+    });
+  });
 }
 const BM_SVG='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
 function updateBookmarkUI(name){
