@@ -423,9 +423,86 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* No SmoothWheelZoom plugin — use Leaflet's native scrollWheelZoom
-   with zoomSnap:0 for continuous zoom. This avoids deadlock issues
-   with _moveStart/_moveEnd and is much lighter on rendering. */
+/* SmoothWheelZoom — CSS-transform based for 60fps zoom without Canvas re-render.
+   During wheel zoom, only CSS transform is updated (no _move/_resetView).
+   On wheel end, a single setView commits the final zoom level. */
+(function(){
+  var _active=false, _goalZoom=null, _curZoom=null, _rafId=null;
+  var _endTimer=null, _mousePos=null, _origin=null;
+
+  function onWheel(e){
+    L.DomEvent.preventDefault(e);
+    L.DomEvent.stopPropagation(e);
+    var map=this;
+    /* Save mouse position from every wheel event (always fresh) */
+    _mousePos=map.mouseEventToContainerPoint(e);
+    if(!_active){
+      _active=true;
+      _curZoom=map.getZoom();
+      _goalZoom=_curZoom;
+      _origin=map.getCenter();
+      /* Disable interaction effects during zoom */
+      map._container.style.willChange='transform';
+    }
+    var delta=L.DomEvent.getWheelDelta(e);
+    _goalZoom+=delta*0.003*3; /* sensitivity */
+    _goalZoom=Math.max(map.getMinZoom(),Math.min(map.getMaxZoom(),_goalZoom));
+    if(!_rafId) tick(map);
+    clearTimeout(_endTimer);
+    _endTimer=setTimeout(function(){ finish(map); },200);
+  }
+
+  function tick(map){
+    _rafId=requestAnimationFrame(function(){
+      if(!_active){_rafId=null;return;}
+      var diff=_goalZoom-_curZoom;
+      if(Math.abs(diff)<0.005){
+        _rafId=requestAnimationFrame(function(){tick(map);});
+        return;
+      }
+      _curZoom+=diff*0.25;
+      /* Apply CSS transform for visual zoom — no layer re-render */
+      var scaleDiff=map.getZoomScale(_curZoom,map.getZoom());
+      var centerPoint=map.getSize().divideBy(2);
+      var viewHalf=map.getSize().divideBy(2);
+      var mp=_mousePos||centerPoint;
+      /* Compute transform origin relative to the map pane */
+      var currentCenter=map.latLngToContainerPoint(map.getCenter());
+      var offset=mp.subtract(centerPoint).multiplyBy(1-1/scaleDiff);
+      var panePos=map._getMapPanePos();
+      var transform='translate3d('+(-panePos.x-offset.x)+'px,'+(-panePos.y-offset.y)+'px,0) scale('+scaleDiff+')';
+      map._mapPane.style.transformOrigin=mp.x+'px '+mp.y+'px';
+      map._mapPane.style.transform=transform;
+      tick(map);
+    });
+  }
+
+  function finish(map){
+    _active=false;
+    if(_rafId){cancelAnimationFrame(_rafId);_rafId=null;}
+    /* Reset CSS transform */
+    map._mapPane.style.transform='';
+    map._mapPane.style.transformOrigin='';
+    map._mapPane.style.willChange='';
+    /* Compute the final center accounting for mouse-position zoom */
+    var finalZoom=_curZoom;
+    var centerPoint=map.getSize().divideBy(2);
+    var mp=_mousePos||centerPoint;
+    var zoomScale=map.getZoomScale(finalZoom,map.getZoom());
+    var offset=mp.subtract(centerPoint).multiplyBy(1-1/zoomScale);
+    var newCenter=map.containerPointToLatLng(centerPoint.add(offset));
+    /* Single setView to commit — this triggers one Canvas re-render */
+    map.setView(newCenter,finalZoom,{animate:false});
+    _goalZoom=null;_curZoom=null;_mousePos=null;
+  }
+
+  L.Map.addInitHook(function(){
+    if(this.options.smoothCssZoom!==false){
+      this.options.scrollWheelZoom=false;
+      L.DomEvent.on(this._container,'wheel',onWheel,this);
+    }
+  });
+})();
 </script>
 <script src="mountains.js?v=20260217u"></script>
 <script>
@@ -657,7 +734,7 @@ function initApp(){
 
 function initMainMap(){
   const canvasRenderer=L.canvas({padding:0.5});
-  mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true,zoomSnap:0,zoomDelta:0.25,wheelDebounceTime:40,wheelPxPerZoomLevel:120}).setView([36.2,138.25],5);
+  mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true,zoomSnap:0,scrollWheelZoom:false,smoothCssZoom:true}).setView([36.2,138.25],5);
   addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
