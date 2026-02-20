@@ -424,82 +424,69 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* SmoothWheelZoom — CSS-transform based for 60fps zoom.
-   Uses Leaflet's own _latLngBoundsToNewLayerBounds for correct positioning.
+   Simple approach: use transform-origin at mouse position + scale().
    No Canvas re-render during zoom; single setView on finish. */
 (function(){
   var _active=false, _goalZoom=null, _curZoom=null, _rafId=null;
-  var _endTimer=null, _mouseLatLng=null, _startZoom=null, _startCenter=null;
+  var _endTimer=null, _mouseContainerPt=null, _mouseLatLng=null, _startZoom=null;
 
   function onWheel(e){
     L.DomEvent.preventDefault(e);
     L.DomEvent.stopPropagation(e);
     var map=this;
-    var mouseContainerPt=map.mouseEventToContainerPoint(e);
+    _mouseContainerPt=map.mouseEventToContainerPoint(e);
     if(!_active){
       _active=true;
       _startZoom=map.getZoom();
-      _startCenter=map.getCenter();
       _curZoom=_startZoom;
       _goalZoom=_startZoom;
-      /* Remember where the mouse is in latlng — this point should stay
-         under the cursor throughout the zoom */
-      _mouseLatLng=map.containerPointToLatLng(mouseContainerPt);
+      _mouseLatLng=map.containerPointToLatLng(_mouseContainerPt);
     }
     var delta=L.DomEvent.getWheelDelta(e);
     _goalZoom+=delta*0.003*3;
     _goalZoom=Math.max(map.getMinZoom(),Math.min(map.getMaxZoom(),_goalZoom));
-    if(!_rafId) tick(map, mouseContainerPt);
+    if(!_rafId) tick(map);
     clearTimeout(_endTimer);
-    _endTimer=setTimeout(function(){ finish(map, mouseContainerPt); },200);
+    _endTimer=setTimeout(function(){ finish(map); },200);
   }
 
-  function tick(map, mouseContainerPt){
+  function tick(map){
     _rafId=requestAnimationFrame(function(){
       if(!_active){_rafId=null;return;}
       var diff=_goalZoom-_curZoom;
       if(Math.abs(diff)<0.005){
-        _rafId=requestAnimationFrame(function(){tick(map, mouseContainerPt);});
+        _rafId=requestAnimationFrame(function(){tick(map);});
         return;
       }
       _curZoom+=diff*0.25;
-      applyTransform(map, mouseContainerPt);
-      tick(map, mouseContainerPt);
+      /* CSS scale only — transform-origin is set to the mouse position
+         relative to the mapPane, so the map scales around the cursor. */
+      var scale=map.getZoomScale(_curZoom,_startZoom);
+      var panePos=map._getMapPanePos();
+      var ox=_mouseContainerPt.x+panePos.x;
+      var oy=_mouseContainerPt.y+panePos.y;
+      map._mapPane.style.transformOrigin=ox+'px '+oy+'px';
+      map._mapPane.style.transform='scale('+scale+')';
+      tick(map);
     });
   }
 
-  function applyTransform(map, mouseContainerPt){
-    /* Scale factor from the committed (start) zoom to the current visual zoom */
-    var scale=map.getZoomScale(_curZoom, _startZoom);
-    /* The mouse latlng position at the start zoom, in layer pixel coords */
-    var startMouseLayerPt=map._latLngToNewLayerPoint(_mouseLatLng, _startZoom, _startCenter);
-    /* Where that same latlng would be at the new zoom, in layer pixel coords */
-    var newMouseLayerPt=map._latLngToNewLayerPoint(_mouseLatLng, _curZoom, _startCenter);
-    /* The map pane needs to be scaled so the mouse point stays in place.
-       panePos is already applied by Leaflet; we just do scale + translate. */
-    var panePos=map._getMapPanePos();
-    /* Transform: scale around (0,0) then translate so mouse point is stable */
-    var offset=startMouseLayerPt.multiplyBy(scale).subtract(newMouseLayerPt).subtract(panePos.multiplyBy(scale-1));
-    map._mapPane.style.transformOrigin='0 0';
-    map._mapPane.style.transform='translate3d('+offset.x+'px,'+offset.y+'px,0) scale('+scale+')';
-  }
-
-  function finish(map, mouseContainerPt){
+  function finish(map){
     _active=false;
     if(_rafId){cancelAnimationFrame(_rafId);_rafId=null;}
     var finalZoom=_curZoom;
-    /* Compute the new center: the _mouseLatLng should end up at mouseContainerPt */
-    var centerPt=map.getSize().divideBy(2);
-    var mouseTargetPt=map.project(_mouseLatLng, finalZoom);
-    var centerTargetPt=mouseTargetPt.subtract(mouseContainerPt).add(centerPt);
-    var newCenter=map.unproject(centerTargetPt, finalZoom);
-    /* Keep CSS transform visible until setView has rendered.
-       Use once('moveend') to clear transform after tiles load. */
+    /* Compute new center so the mouse latlng stays at mouse container position */
+    var half=map.getSize().divideBy(2);
+    var mouseWorld=map.project(_mouseLatLng,finalZoom);
+    var newCenterWorld=mouseWorld.subtract(_mouseContainerPt).add(half);
+    var newCenter=map.unproject(newCenterWorld,finalZoom);
+    /* Clear transform after setView re-renders */
     map.once('moveend',function(){
       map._mapPane.style.transform='';
       map._mapPane.style.transformOrigin='';
     });
-    map.setView(newCenter, finalZoom, {animate:false});
-    _goalZoom=null;_curZoom=null;_mouseLatLng=null;_startZoom=null;_startCenter=null;
+    map.setView(newCenter,finalZoom,{animate:false});
+    _goalZoom=null;_curZoom=null;_mouseLatLng=null;_startZoom=null;_mouseContainerPt=null;
   }
 
   L.Map.addInitHook(function(){
