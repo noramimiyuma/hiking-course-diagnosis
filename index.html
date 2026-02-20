@@ -480,11 +480,10 @@
     var mouseWorld=map.project(_mouseLatLng,finalZoom);
     var newCenterWorld=mouseWorld.subtract(_mouseContainerPt).add(half);
     var newCenter=map.unproject(newCenterWorld,finalZoom);
-    /* Clear transform after setView re-renders */
-    map.once('moveend',function(){
-      map._mapPane.style.transform='';
-      map._mapPane.style.transformOrigin='';
-    });
+    /* Reset transform and setView in the SAME synchronous call stack.
+       The browser won't render between these two operations, so no flash. */
+    map._mapPane.style.transform='';
+    map._mapPane.style.transformOrigin='';
     map.setView(newCenter,finalZoom,{animate:false});
     _goalZoom=null;_curZoom=null;_mouseLatLng=null;_startZoom=null;_mouseContainerPt=null;
   }
