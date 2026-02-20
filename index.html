@@ -421,7 +421,7 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v21</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v22</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -1117,7 +1117,7 @@ function reportWrongLocation(name){
     const params=new URLSearchParams();
     if(REPORT_ENTRY_NAME) params.set(REPORT_ENTRY_NAME, name);
     if(REPORT_ENTRY_COORDS && coords) params.set(REPORT_ENTRY_COORDS, coords);
-    url=`https://docs.google.com/forms/d/e/${REPORT_FORM_ID}/viewform?usp=pp_url&${params.toString()}`;
+    url=`https://docs.google.com/forms/d/${REPORT_FORM_ID}/viewform?usp=pp_url&${params.toString()}`;
   } else {
     /* GitHub Issue 経由（フォールバック） */
     const title=encodeURIComponent(`位置修正: ${name}`);
