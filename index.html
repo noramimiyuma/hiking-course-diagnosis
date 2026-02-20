@@ -421,7 +421,7 @@
 
 <!-- MAIN MAP -->
 <div id="main-map"></div>
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v20</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v21</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -1100,11 +1100,9 @@ document.addEventListener('click',function(e){
 });
 
 /* ── 位置報告 (Google Form) ── */
-/* Google FormのIDとEntry IDを設定すると、フォームへの自動入力リンクが生成されます */
-/* 未設定の場合は GitHub Issue で代替します */
-const REPORT_FORM_ID='';  // Google FormのID（空ならGitHub Issue使用）
-const REPORT_ENTRY_NAME='';   // コース名フィールドのentry ID
-const REPORT_ENTRY_COORDS=''; // 現在座標フィールドのentry ID
+const REPORT_FORM_ID='107-w60evJoR77v5JfGx5T4x6D7hsFWgNIcw3Yjfh6f0';
+const REPORT_ENTRY_NAME='entry.289140350';       // コース名
+const REPORT_ENTRY_COORDS='entry.1296470161';    // 現在の位置
 
 function reportWrongLocation(name){
   const c=filteredCourses.find(x=>x.name===name)||getAllCourses().find(x=>x.name===name);
