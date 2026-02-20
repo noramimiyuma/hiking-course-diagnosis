@@ -424,13 +424,21 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* SmoothWheelZoom — based on mutsuyuki/Leaflet.SmoothWheelZoom.
-   Completely removes the prevCenter/prevZoom state check that caused
-   deadlock when setView() was called externally (e.g. panToMarker).
-   Each rAF frame recalculates from live map state instead. */
+   Patched: before any external setView/flyTo, call
+   map.smoothWheelZoom._forceStop() to cleanly end the rAF cycle
+   and reset Leaflet internal zoom/move flags.  */
 L.Map.mergeOptions({smoothWheelZoom:true,smoothSensitivity:1});
 L.Map.SmoothWheelZoom=L.Handler.extend({
   addHooks:function(){L.DomEvent.on(this._map._container,'wheel',this._onWheelScroll,this);},
   removeHooks:function(){L.DomEvent.off(this._map._container,'wheel',this._onWheelScroll,this);},
+  /* Call this before any programmatic setView / flyTo to cleanly stop */
+  _forceStop:function(){
+    if(this._zoomAnimationId){cancelAnimationFrame(this._zoomAnimationId);this._zoomAnimationId=null;}
+    clearTimeout(this._timeoutId);
+    if(this._moved){this._map._moveEnd(true);this._moved=false;}
+    this._isWheeling=false;
+    this._goalZoom=null;
+  },
   _onWheelScroll:function(e){
     if(!this._isWheeling) this._onWheelStart(e);
     this._onWheeling(e);
@@ -448,6 +456,8 @@ L.Map.SmoothWheelZoom=L.Handler.extend({
     map._stop();
     if(map._panAnim) map._panAnim.stop();
     this._goalZoom=map.getZoom();
+    this._prevCenter=map.getCenter();
+    this._prevZoom=map.getZoom();
     this._zoomAnimationId=requestAnimationFrame(this._updateWheelZoom.bind(this));
   },
   _onWheeling:function(e){
@@ -464,16 +474,15 @@ L.Map.SmoothWheelZoom=L.Handler.extend({
   },
   _onWheelEnd:function(){
     this._isWheeling=false;
-    cancelAnimationFrame(this._zoomAnimationId);
+    cancelAnimationFrame(this._zoomAnimationId);this._zoomAnimationId=null;
     this._map._moveEnd(true);
+    this._moved=false;
   },
   _updateWheelZoom:function(){
     var map=this._map;
-    /* No state check — always compute from live map state to avoid deadlock */
+    if(!this._isWheeling){return;} /* stopped externally */
     this._zoom=map.getZoom()+(this._goalZoom-map.getZoom())*0.3;
     this._zoom=Math.floor(this._zoom*100)/100;
-    /* Recalculate reference points from current map state every frame,
-       so external setView/panTo changes are absorbed naturally */
     this._centerPoint=map.getSize()._divideBy(2);
     this._wheelStartLatLng=map.containerPointToLatLng(this._wheelMousePosition);
     var delta=this._wheelMousePosition.subtract(this._centerPoint);
@@ -491,6 +500,8 @@ L.Map.SmoothWheelZoom=L.Handler.extend({
       this._moved=true;
     }
     map._move(this._center,this._zoom);
+    this._prevCenter=map.getCenter();
+    this._prevZoom=map.getZoom();
     this._zoomAnimationId=requestAnimationFrame(this._updateWheelZoom.bind(this));
   }
 });
@@ -577,6 +588,7 @@ function applyGeoResult(lat,lng,accuracy,approx){
       radius:accuracy,fillColor:'#1565c0',fillOpacity:0.08,color:'#1565c0',weight:1,opacity:0.3,interactive:false
     }).addTo(mainMap);
   }
+  if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();
   mainMap.setView([lat,lng],approx?8:10,{animate:true});
   geoToast(approx?'おおよその現在地から近い順に並べ替えました':'現在地から近い順に並べ替えました');
   applyFilters();
@@ -1163,6 +1175,8 @@ function panToMarker(name){
   /* mobile: collapse full sheet to peek so the map is visible */
   if(window.innerWidth<=768&&sheetStop==='full') setSheetPosition('peek',true);
   const loc=getCourseLocation(c);if(!loc)return;
+  /* Cleanly stop any in-progress smooth zoom before programmatic setView */
+  if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();
   mainMap.setView([loc.lat,loc.lng],12,{animate:false});
   /* Cancel any pending debounced updateVisibleMarkers from the moveend above,
      then run it ourselves so we have full control of the timing. */
@@ -1204,6 +1218,7 @@ function switchSidebarView(id){
 function backToLanding(){
   switchSidebarView('sb-landing');
   applyFilters();
+  if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();
   mainMap.setView([36.2,138.25],5,{animate:true});
 }
 
@@ -1585,8 +1600,8 @@ function showDiagnosisResult(){
   const center=PREF_CENTER[selectedPref]||{lat:36.2,lng:138.25};
   const bounds=[];
   markerLayer.eachLayer(m=>{if(m.getLatLng)bounds.push(m.getLatLng());});
-  if(bounds.length>0) mainMap.fitBounds(L.latLngBounds(bounds),{padding:[30,30],maxZoom:11});
-  else mainMap.setView([center.lat,center.lng],9,{animate:true});
+  if(bounds.length>0){if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();mainMap.fitBounds(L.latLngBounds(bounds),{padding:[30,30],maxZoom:11});}
+  else{if(mainMap.smoothWheelZoom) mainMap.smoothWheelZoom._forceStop();mainMap.setView([center.lat,center.lng],9,{animate:true});}
   }catch(e){
     console.error('診断結果表示エラー:',e);
     document.getElementById('sb-result').innerHTML=`<div class="r-sec"><button class="sb-back" onclick="backToLanding()">← コース地図に戻る</button><p style="padding:20px;color:#c62828">⚠️ 結果の表示中にエラーが発生しました。もう一度お試しください。</p><button class="btn-restart" onclick="startQuiz()">📋 もう一度診断する</button></div>`;
