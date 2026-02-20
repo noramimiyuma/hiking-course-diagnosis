@@ -423,7 +423,56 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* SmoothWheelZoom plugin removed — using Leaflet built-in scrollWheelZoom instead */
+/* Minimal smooth wheel zoom — no internal state checks that can deadlock with setView */
+(function(){
+  var targetZoom=null, rafId=null, wheeling=false, endTimer=null;
+  function onWheel(e){
+    e.preventDefault();
+    var map=this;
+    if(!wheeling){
+      wheeling=true;
+      targetZoom=map.getZoom();
+    }
+    var delta=L.DomEvent.getWheelDelta(e);
+    targetZoom+=delta*0.003*10; // sensitivity factor
+    targetZoom=Math.max(map.getMinZoom(),Math.min(map.getMaxZoom(),targetZoom));
+    if(!rafId) tick(map,e);
+    clearTimeout(endTimer);
+    endTimer=setTimeout(function(){
+      wheeling=false;
+      cancelAnimationFrame(rafId);rafId=null;
+      map.fire('moveend');
+    },200);
+  }
+  function tick(map,origEvent){
+    rafId=requestAnimationFrame(function(){
+      var cur=map.getZoom();
+      var diff=targetZoom-cur;
+      if(Math.abs(diff)<0.005){rafId=requestAnimationFrame(function(){tick(map,origEvent);});return;}
+      var next=cur+diff*0.25;
+      /* zoom towards mouse pointer */
+      var mousePos=map.mouseEventToContainerPoint(origEvent);
+      var centerPos=map.getSize().divideBy(2);
+      var mouseLatLng=map.containerPointToLatLng(mousePos);
+      var newCenter=map.unproject(
+        map.project(mouseLatLng,next).subtract(mousePos.subtract(centerPos)),next
+      );
+      map._move(newCenter,next);
+      if(!map._mapPane.classList.contains('leaflet-zoom-anim'))
+        map.fire('move');
+      tick(map,origEvent);
+    });
+  }
+  L.Map.addInitHook(function(){
+    if(this.options.smoothZoom!==false){
+      this.options.scrollWheelZoom=false;
+      L.DomEvent.on(this._container,'wheel',onWheel,this);
+      /* Reset targetZoom on any programmatic view change so the next
+         wheel interaction starts from the correct zoom level. */
+      this.on('zoomend',function(){if(!wheeling) targetZoom=null;});
+    }
+  });
+})();
 </script>
 <script src="mountains.js?v=20260217u"></script>
 <script>
@@ -655,7 +704,7 @@ function initApp(){
 
 function initMainMap(){
   const canvasRenderer=L.canvas({padding:0.5});
-  mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true,zoomSnap:0,wheelDebounceTime:80,wheelPxPerZoomLevel:120,scrollWheelZoom:true}).setView([36.2,138.25],5);
+  mainMap=L.map('main-map',{zoomControl:false,renderer:canvasRenderer,preferCanvas:true,zoomSnap:0}).setView([36.2,138.25],5);
   addGeoControl(mainMap);
   addLayerControl(mainMap);
   addLegendControl(mainMap);
