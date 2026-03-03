@@ -319,6 +319,61 @@
       .right-panel,.right-panel.collapsed{position:fixed;top:0;right:0;bottom:0;width:100%;height:100%;z-index:200;margin-right:0;border-radius:0;box-shadow:-4px 0 20px rgba(0,0,0,.2);transform:translateX(100%);transition:transform .35s cubic-bezier(.2,.9,.3,1)}
       .right-panel.open-mobile{transform:translateX(0)}
     }
+
+    /* ========== AI CONCIERGE ========== */
+    .ai-fab{position:fixed;bottom:24px;right:24px;z-index:150;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(27,67,50,.4);display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:24px}
+    .ai-fab:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(27,67,50,.5)}
+    .ai-fab:active{transform:scale(.95)}
+    .ai-fab.open{background:#555}
+    .ai-fab svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .ai-chat{position:fixed;bottom:92px;right:24px;z-index:149;width:400px;max-height:560px;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.2);display:flex;flex-direction:column;opacity:0;transform:translateY(16px) scale(.95);pointer-events:none;transition:all .25s cubic-bezier(.2,.9,.3,1);overflow:hidden}
+    .ai-chat.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+    .ai-chat-header{padding:14px 16px;background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .ai-chat-header h3{font-size:14px;font-weight:700;flex:1;margin:0}
+    .ai-chat-header .ai-key-btn{background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+    .ai-chat-header .ai-key-btn:hover{background:rgba(255,255,255,.35)}
+    .ai-chat-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:380px}
+    .ai-msg{max-width:88%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;word-break:break-word;animation:fadeIn .25s ease}
+    .ai-msg-user{align-self:flex-end;background:#1b4332;color:#fff;border-bottom-right-radius:4px}
+    .ai-msg-ai{align-self:flex-start;background:#f0f4f0;color:#333;border-bottom-left-radius:4px}
+    .ai-msg-ai .ai-course-link{color:#2d6a4f;font-weight:700;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+    .ai-msg-ai .ai-course-link:hover{color:#1b4332;text-decoration-style:solid}
+    .ai-msg-system{align-self:center;background:#fff8e1;color:#e65100;font-size:11px;border-radius:8px;text-align:center;padding:6px 12px}
+    .ai-msg-loading{align-self:flex-start;background:#f0f4f0;color:#999;border-bottom-left-radius:4px;display:flex;align-items:center;gap:6px}
+    .ai-typing{display:flex;gap:4px}
+    .ai-typing span{width:6px;height:6px;background:#aaa;border-radius:50%;animation:ai-bounce .6s ease-in-out infinite alternate}
+    .ai-typing span:nth-child(2){animation-delay:.15s}
+    .ai-typing span:nth-child(3){animation-delay:.3s}
+    @keyframes ai-bounce{to{opacity:.3;transform:translateY(-4px)}}
+    .ai-chat-footer{padding:10px 12px;border-top:1px solid #e8ede8;display:flex;gap:8px;flex-shrink:0;background:#fff}
+    .ai-chat-footer input{flex:1;border:1.5px solid #dce4dc;border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s;background:#f8faf8}
+    .ai-chat-footer input:focus{border-color:#2d6a4f;background:#fff}
+    .ai-chat-footer button{background:linear-gradient(135deg,#1b4332,#2d6a4f);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .ai-chat-footer button:hover{box-shadow:0 2px 8px rgba(27,67,50,.3)}
+    .ai-chat-footer button:disabled{opacity:.5;cursor:not-allowed}
+    .ai-suggest-chips{display:flex;flex-wrap:wrap;gap:5px;padding:4px 0}
+    .ai-suggest-chip{padding:5px 10px;border:1.5px solid #e8ede8;border-radius:14px;background:#fff;font-size:11px;color:#555;cursor:pointer;transition:all .15s}
+    .ai-suggest-chip:hover{border-color:#2d6a4f;background:#e8f5e9;color:#1b4332}
+    /* API key dialog */
+    .ai-key-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+    .ai-key-overlay.open{opacity:1;pointer-events:auto}
+    .ai-key-dialog{background:#fff;border-radius:16px;padding:24px;width:360px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,.2);text-align:center}
+    .ai-key-dialog h3{font-size:16px;color:#1b4332;margin-bottom:8px}
+    .ai-key-dialog p{font-size:12px;color:#888;margin-bottom:16px;line-height:1.5}
+    .ai-key-dialog input{width:100%;padding:10px 12px;border:1.5px solid #dce4dc;border-radius:8px;font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;transition:border-color .2s}
+    .ai-key-dialog input:focus{border-color:#2d6a4f}
+    .ai-key-dialog .ai-key-actions{display:flex;gap:8px;justify-content:center}
+    .ai-key-dialog button{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+    .ai-key-dialog .ai-key-save{background:#2d6a4f;color:#fff}
+    .ai-key-dialog .ai-key-save:hover{background:#1b4332}
+    .ai-key-dialog .ai-key-cancel{background:#f5f5f5;color:#666}
+    .ai-key-dialog .ai-key-cancel:hover{background:#eee}
+    @media(max-width:768px){
+      .ai-fab{bottom:16px;right:16px;width:50px;height:50px}
+      .ai-fab svg{width:24px;height:24px}
+      .ai-chat{bottom:0;right:0;left:0;width:100%;max-height:100%;height:100%;border-radius:0;max-height:100vh}
+      .ai-chat-body{max-height:none;flex:1}
+    }
   </style>
 </head>
 <body>
@@ -464,7 +519,46 @@
   </div>
 </div>
 
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v37</div>
+<!-- AI CONCIERGE FAB -->
+<button class="ai-fab" id="ai-fab" onclick="toggleAiChat()" title="AI コンシェルジュ">
+  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+</button>
+
+<!-- AI CHAT PANEL -->
+<div class="ai-chat" id="ai-chat">
+  <div class="ai-chat-header">
+    <span style="font-size:18px">🏔️</span>
+    <h3>AI コンシェルジュ</h3>
+    <button class="ai-key-btn" onclick="showAiKeyDialog()" title="API キー設定">⚙️</button>
+  </div>
+  <div class="ai-chat-body" id="ai-chat-body">
+    <div class="ai-msg ai-msg-ai">こんにちは！ハイキング・散策コースの AI コンシェルジュです 🌿<br><br>「今週末が見頃の静岡のコースは？」「子連れで楽しめる場所は？」など、お気軽にご質問ください。</div>
+    <div class="ai-suggest-chips" id="ai-suggest-chips">
+      <span class="ai-suggest-chip" onclick="aiSuggestClick(this)">今月おすすめのコースは？</span>
+      <span class="ai-suggest-chip" onclick="aiSuggestClick(this)">初心者向けの短時間コース</span>
+      <span class="ai-suggest-chip" onclick="aiSuggestClick(this)">温泉が近くにある場所</span>
+    </div>
+  </div>
+  <div class="ai-chat-footer">
+    <input type="text" id="ai-input" placeholder="質問を入力..." autocomplete="off" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendAiMessage()">
+    <button id="ai-send-btn" onclick="sendAiMessage()">送信</button>
+  </div>
+</div>
+
+<!-- AI KEY DIALOG -->
+<div class="ai-key-overlay" id="ai-key-overlay" onclick="if(event.target===this)closeAiKeyDialog()">
+  <div class="ai-key-dialog">
+    <h3>🔑 Gemini API キー設定</h3>
+    <p>Google AI Studio で発行した API キーを入力してください。<br>キーはお使いのブラウザにのみ保存されます。</p>
+    <input type="password" id="ai-key-input" placeholder="AIza... (API キー)">
+    <div class="ai-key-actions">
+      <button class="ai-key-cancel" onclick="closeAiKeyDialog()">キャンセル</button>
+      <button class="ai-key-save" onclick="saveAiKey()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v38</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
@@ -1854,6 +1948,290 @@ function showDiagnosisResult(){
   }catch(e){
     console.error('診断結果表示エラー:',e);
     document.getElementById('sb-result').innerHTML=`<div class="r-sec"><button class="sb-back" onclick="backToLanding()">← コース地図に戻る</button><p style="padding:20px;color:#c62828">⚠️ 結果の表示中にエラーが発生しました。もう一度お試しください。</p><button class="btn-restart" onclick="startQuiz()">📋 もう一度診断する</button></div>`;
+  }
+}
+
+// ============ AI CONCIERGE ============
+const GEMINI_MODEL='gemini-2.0-flash';
+const GEMINI_API_BASE='https://generativelanguage.googleapis.com/v1beta/models/';
+let aiChatOpen=false;
+let aiConversation=[];   // {role:'user'|'model', parts:[{text:'...'}]}
+let aiSending=false;
+
+function getGeminiKey(){return localStorage.getItem('geminiApiKey')||'';}
+function setGeminiKey(k){localStorage.setItem('geminiApiKey',k);}
+
+function showAiKeyDialog(){
+  const ov=document.getElementById('ai-key-overlay');if(!ov)return;
+  document.getElementById('ai-key-input').value=getGeminiKey();
+  ov.classList.add('open');
+}
+function closeAiKeyDialog(){
+  const ov=document.getElementById('ai-key-overlay');if(!ov)return;
+  ov.classList.remove('open');
+}
+function saveAiKey(){
+  const v=document.getElementById('ai-key-input').value.trim();
+  if(!v){alert('API キーを入力してください');return;}
+  setGeminiKey(v);
+  closeAiKeyDialog();
+  appendAiMsg('system','✅ API キーを保存しました');
+}
+
+function toggleAiChat(){
+  aiChatOpen=!aiChatOpen;
+  const chat=document.getElementById('ai-chat');
+  const fab=document.getElementById('ai-fab');
+  if(aiChatOpen){
+    chat.classList.add('open');fab.classList.add('open');
+    fab.innerHTML='<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    if(!getGeminiKey()) setTimeout(showAiKeyDialog,400);
+    document.getElementById('ai-input').focus();
+  } else {
+    chat.classList.remove('open');fab.classList.remove('open');
+    fab.innerHTML='<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+  }
+}
+
+function appendAiMsg(role, text){
+  const body=document.getElementById('ai-chat-body');if(!body)return;
+  const div=document.createElement('div');
+  div.className='ai-msg '+(role==='user'?'ai-msg-user':role==='system'?'ai-msg-system':'ai-msg-ai');
+  if(role==='ai'){
+    div.innerHTML=formatAiResponse(text);
+  } else {
+    div.textContent=text;
+  }
+  body.appendChild(div);
+  body.scrollTop=body.scrollHeight;
+  return div;
+}
+
+function showAiLoading(){
+  const body=document.getElementById('ai-chat-body');if(!body)return;
+  const div=document.createElement('div');
+  div.className='ai-msg ai-msg-loading';
+  div.id='ai-loading';
+  div.innerHTML='<div class="ai-typing"><span></span><span></span><span></span></div>';
+  body.appendChild(div);
+  body.scrollTop=body.scrollHeight;
+}
+function hideAiLoading(){
+  const el=document.getElementById('ai-loading');
+  if(el) el.remove();
+}
+
+function aiSuggestClick(chip){
+  document.getElementById('ai-input').value=chip.textContent;
+  sendAiMessage();
+  const chips=document.getElementById('ai-suggest-chips');
+  if(chips) chips.remove();
+}
+
+/* ---------- BUILD COURSE CONTEXT ---------- */
+function buildCourseContext(question){
+  const all=getAllCourses();
+  const q=question.toLowerCase();
+  /* extract prefectures mentioned */
+  const allPrefs=Object.values(REGIONS).flatMap(r=>r.prefs);
+  const mentionedPrefs=allPrefs.filter(p=>q.includes(p.replace(/[都府県]/g,'')));
+  /* extract level keywords */
+  const levelKw={entry:['入門','初心者','ビギナー','初めて'],beginner:['初級','ライト'],intermediate:['中級'],advanced:['上級','本格'],expert:['エキスパート','上級者']};
+  let mentionedLevels=[];
+  for(const[lv,kws] of Object.entries(levelKw)){
+    if(kws.some(k=>q.includes(k))) mentionedLevels.push(lv);
+  }
+  /* extract time keywords */
+  let timeFilter=null;
+  if(q.includes('短時間')||q.includes('1時間')||q.includes('2時間')||q.includes('さくっと')) timeFilter='short';
+  if(q.includes('半日')||q.includes('日帰り')) timeFilter='halfday';
+  if(q.includes('1泊')||q.includes('泊まり')||q.includes('縦走')) timeFilter='overnight';
+  /* extract season/month keywords */
+  let seasonFilter=null;
+  const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  monthNames.forEach((mn,i)=>{if(q.includes(mn)) seasonFilter=i+1;});
+  if(q.includes('今月')||q.includes('今週')||q.includes('見頃')) seasonFilter=getCurrentMonth();
+  if(q.includes('春')) seasonFilter=4;
+  if(q.includes('夏')) seasonFilter=7;
+  if(q.includes('秋')) seasonFilter=10;
+  if(q.includes('冬')) seasonFilter=1;
+  /* equipment keywords */
+  let eqFilter=null;
+  if(q.includes('私服')||q.includes('スニーカー')||q.includes('散策')||q.includes('気軽')||q.includes('子連れ')||q.includes('家族')) eqFilter='casual';
+  if(q.includes('登山装備')||q.includes('本格')) eqFilter='hiking';
+  /* other keywords */
+  const otherKws=['温泉','紅葉','桜','花','展望','絶景','富士','海','滝','森林','パワースポット','歴史','寺','神社'];
+  const matchedKws=otherKws.filter(k=>q.includes(k));
+  /* filter courses */
+  let filtered=all;
+  if(mentionedPrefs.length>0){
+    const prefSet=new Set(mentionedPrefs);
+    filtered=filtered.filter(c=>{
+      const cp=c.pref||'';
+      return prefSet.has(cp)||mentionedPrefs.some(p=>cp.includes(p.replace(/[都府県]/g,'')));
+    });
+  }
+  if(mentionedLevels.length>0){
+    filtered=filtered.filter(c=>mentionedLevels.includes(c._level));
+  }
+  if(eqFilter){
+    filtered=filtered.filter(c=>getEquipmentCategory(c.difficulty||'散策')===eqFilter);
+  }
+  if(timeFilter==='short'){
+    filtered=filtered.filter(c=>{const t=c.time||'';return t.includes('1時間')||t.includes('2時間')||t.includes('1.5');});
+  }
+  if(seasonFilter){
+    filtered=filtered.filter(c=>{
+      const months=parseSeasonMonths(c.season||'');
+      return months.includes(seasonFilter);
+    });
+  }
+  if(matchedKws.length>0){
+    const kFiltered=filtered.filter(c=>{
+      const haystack=((c.description||'')+(c.name||'')+(c.tags||[]).map(t=>t.t).join(' ')).toLowerCase();
+      return matchedKws.some(k=>haystack.includes(k));
+    });
+    if(kFiltered.length>=3) filtered=kFiltered;
+  }
+  /* if too few results and prefecture filter active, relax to adjacent */
+  if(filtered.length<5&&mentionedPrefs.length>0){
+    const adjPrefs=new Set(mentionedPrefs);
+    mentionedPrefs.forEach(p=>{(PREF_ADJACENT[p]||[]).forEach(a=>adjPrefs.add(a));});
+    const extra=all.filter(c=>{
+      const cp=c.pref||'';
+      return !mentionedPrefs.some(p=>cp.includes(p.replace(/[都府県]/g,'')))&&
+             [...adjPrefs].some(p=>cp.includes(p.replace(/[都府県]/g,'')));
+    });
+    filtered=[...filtered,...extra.slice(0,15)];
+  }
+  /* if still empty, fall back to season-scored top courses */
+  if(filtered.length===0){
+    filtered=all.slice().sort((a,b)=>getSeasonScore(b)-getSeasonScore(a)).slice(0,30);
+  }
+  /* cap at 40 courses, sort by season score */
+  filtered.sort((a,b)=>getSeasonScore(b)-getSeasonScore(a));
+  if(filtered.length>40) filtered=filtered.slice(0,40);
+  /* format compact */
+  const lines=filtered.map(c=>{
+    const ss=getSeasonScore(c);
+    const ssLabel=['','△ オフシーズン','○ まずまず','◎ ベストシーズン'][ss]||'';
+    const eq=getEquipmentCategory(c.difficulty||'散策');
+    const eqL=EQ_LABELS[eq]||'';
+    const hl=getHighlightText(c)||'';
+    const tags=(c.tags||[]).map(t=>t.t).join(', ');
+    const desc=(c.description||'').slice(0,80);
+    return `【${c.name}】${c.pref||''} / ${c.difficulty||''} / ${c.time} / ${c.elevation} / ${c.season} / ${eqL} / ${ssLabel}${hl?' / '+hl:''}${tags?' / '+tags:''}${desc?' / '+desc:''}`;
+  });
+  return {courseText:lines.join('\n'),count:filtered.length,courses:filtered};
+}
+
+/* ---------- SYSTEM PROMPT ---------- */
+function buildSystemPrompt(courseCtx){
+  const month=getCurrentMonth();
+  const monthName=MONTH_NAMES[month];
+  return `あなたは「全国散策マップ」のAIコンシェルジュです。日本全国のハイキング・散策コースに精通したフレンドリーなガイドとして振る舞ってください。
+
+## ルール
+- 必ず日本語で回答してください
+- コース名は必ず正確に【】で囲んで表記してください（例：【高尾山（東京都）】）
+- おすすめのコースは3〜5件程度に絞って具体的に紹介してください
+- 各コースについて、なぜそのコースをおすすめするのか理由を簡潔に添えてください
+- 所要時間・難易度・季節の情報も含めてください
+- 今月は${monthName}です。季節情報「◎ ベストシーズン」のコースを優先してください
+- 存在しないコースを捏造しないでください。以下のコースデータにあるものだけを紹介してください
+- 200文字以内で簡潔に回答してください。冗長にならないようにしてください
+- ユーザーの質問がコースに関係ない場合は、丁寧にハイキング・散策コースの質問をするよう促してください
+
+## 利用可能なコースデータ（${courseCtx.count}件）
+${courseCtx.courseText}`;
+}
+
+/* ---------- CALL GEMINI API ---------- */
+async function callGemini(userMsg){
+  const key=getGeminiKey();
+  if(!key) throw new Error('API_KEY_MISSING');
+  const courseCtx=buildCourseContext(userMsg);
+  /* add user message to conversation */
+  aiConversation.push({role:'user',parts:[{text:userMsg}]});
+  /* keep conversation short (last 6 turns) */
+  if(aiConversation.length>12) aiConversation=aiConversation.slice(-12);
+  const url=`${GEMINI_API_BASE}${GEMINI_MODEL}:generateContent?key=${key}`;
+  const body={
+    system_instruction:{parts:[{text:buildSystemPrompt(courseCtx)}]},
+    contents:aiConversation,
+    generationConfig:{temperature:0.7,maxOutputTokens:1024,topP:0.9}
+  };
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    const msg=err?.error?.message||`HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  const data=await res.json();
+  const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'回答を生成できませんでした。';
+  /* add assistant reply to conversation */
+  aiConversation.push({role:'model',parts:[{text}]});
+  return {text,courses:courseCtx.courses};
+}
+
+/* ---------- FORMAT AI RESPONSE (make course names clickable) ---------- */
+function formatAiResponse(text){
+  /* escape html */
+  let html=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  /* convert 【courseName】 to clickable link */
+  const allCourses=getAllCourses();
+  const nameSet=new Set(allCourses.map(c=>c.name));
+  html=html.replace(/【([^】]+)】/g,(m,name)=>{
+    if(nameSet.has(name)){
+      const escaped=name.replace(/'/g,"\\'");
+      return `<span class="ai-course-link" onclick="aiCourseLinkClick('${escaped}')">📍${name}</span>`;
+    }
+    return `<strong>${name}</strong>`;
+  });
+  /* convert newlines to <br> */
+  html=html.replace(/\n/g,'<br>');
+  return html;
+}
+
+/* ---------- COURSE LINK CLICK ---------- */
+function aiCourseLinkClick(name){
+  /* close chat on mobile */
+  if(window.innerWidth<=768){toggleAiChat();}
+  /* pan to marker */
+  panToMarker(name);
+}
+
+/* ---------- SEND MESSAGE ---------- */
+async function sendAiMessage(){
+  if(aiSending) return;
+  const input=document.getElementById('ai-input');
+  const msg=input.value.trim();
+  if(!msg) return;
+  if(!getGeminiKey()){showAiKeyDialog();return;}
+  input.value='';
+  appendAiMsg('user',msg);
+  aiSending=true;
+  document.getElementById('ai-send-btn').disabled=true;
+  showAiLoading();
+  try{
+    const result=await callGemini(msg);
+    hideAiLoading();
+    appendAiMsg('ai',result.text);
+  }catch(e){
+    hideAiLoading();
+    if(e.message==='API_KEY_MISSING'){
+      appendAiMsg('system','⚠️ API キーが設定されていません');
+      showAiKeyDialog();
+    } else {
+      appendAiMsg('system','⚠️ エラー: '+e.message);
+    }
+    /* remove failed user message from conversation */
+    if(aiConversation.length&&aiConversation[aiConversation.length-1].role==='user'){
+      aiConversation.pop();
+    }
+  }finally{
+    aiSending=false;
+    document.getElementById('ai-send-btn').disabled=false;
   }
 }
 
