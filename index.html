@@ -548,9 +548,14 @@
 <!-- AI KEY DIALOG -->
 <div class="ai-key-overlay" id="ai-key-overlay" onclick="if(event.target===this)closeAiKeyDialog()">
   <div class="ai-key-dialog">
-    <h3>🔑 Gemini API キー設定</h3>
+    <h3>🔑 Gemini API 設定</h3>
     <p>Google AI Studio で発行した API キーを入力してください。<br>キーはお使いのブラウザにのみ保存されます。</p>
     <input type="password" id="ai-key-input" placeholder="AIza... (API キー)">
+    <select id="ai-model-select" style="width:100%;padding:9px 12px;border:1.5px solid #dce4dc;border-radius:8px;font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;background:#fff;color:#333;cursor:pointer">
+      <option value="gemini-1.5-flash">Gemini 1.5 Flash（推奨・無料枠大）</option>
+      <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+      <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+    </select>
     <div class="ai-key-actions">
       <button class="ai-key-cancel" onclick="closeAiKeyDialog()">キャンセル</button>
       <button class="ai-key-save" onclick="saveAiKey()">保存</button>
@@ -558,7 +563,7 @@
   </div>
 </div>
 
-<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v38</div>
+<div id="app-version" style="position:fixed;top:8px;right:8px;z-index:10000;background:rgba(0,0,0,0.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;pointer-events:none">v39</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
@@ -1952,7 +1957,7 @@ function showDiagnosisResult(){
 }
 
 // ============ AI CONCIERGE ============
-const GEMINI_MODEL='gemini-2.0-flash';
+const GEMINI_MODELS={'gemini-1.5-flash':'Gemini 1.5 Flash（推奨）','gemini-2.0-flash':'Gemini 2.0 Flash','gemini-2.0-flash-lite':'Gemini 2.0 Flash Lite'};
 const GEMINI_API_BASE='https://generativelanguage.googleapis.com/v1beta/models/';
 let aiChatOpen=false;
 let aiConversation=[];   // {role:'user'|'model', parts:[{text:'...'}]}
@@ -1960,10 +1965,14 @@ let aiSending=false;
 
 function getGeminiKey(){return localStorage.getItem('geminiApiKey')||'';}
 function setGeminiKey(k){localStorage.setItem('geminiApiKey',k);}
+function getGeminiModel(){return localStorage.getItem('geminiModel')||'gemini-1.5-flash';}
+function setGeminiModel(m){localStorage.setItem('geminiModel',m);}
 
 function showAiKeyDialog(){
   const ov=document.getElementById('ai-key-overlay');if(!ov)return;
   document.getElementById('ai-key-input').value=getGeminiKey();
+  const sel=document.getElementById('ai-model-select');
+  if(sel) sel.value=getGeminiModel();
   ov.classList.add('open');
 }
 function closeAiKeyDialog(){
@@ -1974,8 +1983,11 @@ function saveAiKey(){
   const v=document.getElementById('ai-key-input').value.trim();
   if(!v){alert('API キーを入力してください');return;}
   setGeminiKey(v);
+  const sel=document.getElementById('ai-model-select');
+  if(sel) setGeminiModel(sel.value);
   closeAiKeyDialog();
-  appendAiMsg('system','✅ API キーを保存しました');
+  aiConversation=[];
+  appendAiMsg('system','✅ 設定を保存しました（モデル: '+(GEMINI_MODELS[getGeminiModel()]||getGeminiModel())+')');
 }
 
 function toggleAiChat(){
@@ -2108,19 +2120,15 @@ function buildCourseContext(question){
   if(filtered.length===0){
     filtered=all.slice().sort((a,b)=>getSeasonScore(b)-getSeasonScore(a)).slice(0,30);
   }
-  /* cap at 40 courses, sort by season score */
+  /* cap at 20 courses, sort by season score */
   filtered.sort((a,b)=>getSeasonScore(b)-getSeasonScore(a));
-  if(filtered.length>40) filtered=filtered.slice(0,40);
-  /* format compact */
+  if(filtered.length>20) filtered=filtered.slice(0,20);
+  /* format ultra-compact (minimize tokens) */
   const lines=filtered.map(c=>{
     const ss=getSeasonScore(c);
-    const ssLabel=['','△ オフシーズン','○ まずまず','◎ ベストシーズン'][ss]||'';
+    const ssLabel=['','△','○','◎'][ss]||'';
     const eq=getEquipmentCategory(c.difficulty||'散策');
-    const eqL=EQ_LABELS[eq]||'';
-    const hl=getHighlightText(c)||'';
-    const tags=(c.tags||[]).map(t=>t.t).join(', ');
-    const desc=(c.description||'').slice(0,80);
-    return `【${c.name}】${c.pref||''} / ${c.difficulty||''} / ${c.time} / ${c.elevation} / ${c.season} / ${eqL} / ${ssLabel}${hl?' / '+hl:''}${tags?' / '+tags:''}${desc?' / '+desc:''}`;
+    return `【${c.name}】${c.pref||''}|${c.difficulty||''}|${c.time}|${c.season}|${eq==='casual'?'私服':'装備'}|${ssLabel}`;
   });
   return {courseText:lines.join('\n'),count:filtered.length,courses:filtered};
 }
@@ -2129,20 +2137,9 @@ function buildCourseContext(question){
 function buildSystemPrompt(courseCtx){
   const month=getCurrentMonth();
   const monthName=MONTH_NAMES[month];
-  return `あなたは「全国散策マップ」のAIコンシェルジュです。日本全国のハイキング・散策コースに精通したフレンドリーなガイドとして振る舞ってください。
-
-## ルール
-- 必ず日本語で回答してください
-- コース名は必ず正確に【】で囲んで表記してください（例：【高尾山（東京都）】）
-- おすすめのコースは3〜5件程度に絞って具体的に紹介してください
-- 各コースについて、なぜそのコースをおすすめするのか理由を簡潔に添えてください
-- 所要時間・難易度・季節の情報も含めてください
-- 今月は${monthName}です。季節情報「◎ ベストシーズン」のコースを優先してください
-- 存在しないコースを捏造しないでください。以下のコースデータにあるものだけを紹介してください
-- 200文字以内で簡潔に回答してください。冗長にならないようにしてください
-- ユーザーの質問がコースに関係ない場合は、丁寧にハイキング・散策コースの質問をするよう促してください
-
-## 利用可能なコースデータ（${courseCtx.count}件）
+  return `ハイキング・散策AIガイド。今月は${monthName}。日本語で回答。
+ルール: コース名は必ず【】で囲む。3〜5件に絞り簡潔に紹介。◎のコースを優先。下記データにないコースは紹介禁止。150字以内で簡潔に。
+データ(名前|県|難易度|時間|季節|装備|今月):
 ${courseCtx.courseText}`;
 }
 
@@ -2150,22 +2147,27 @@ ${courseCtx.courseText}`;
 async function callGemini(userMsg){
   const key=getGeminiKey();
   if(!key) throw new Error('API_KEY_MISSING');
+  const model=getGeminiModel();
   const courseCtx=buildCourseContext(userMsg);
   /* add user message to conversation */
   aiConversation.push({role:'user',parts:[{text:userMsg}]});
-  /* keep conversation short (last 6 turns) */
-  if(aiConversation.length>12) aiConversation=aiConversation.slice(-12);
-  const url=`${GEMINI_API_BASE}${GEMINI_MODEL}:generateContent?key=${key}`;
+  /* keep conversation short (last 4 turns) */
+  if(aiConversation.length>8) aiConversation=aiConversation.slice(-8);
+  const url=`${GEMINI_API_BASE}${model}:generateContent?key=${key}`;
   const body={
     system_instruction:{parts:[{text:buildSystemPrompt(courseCtx)}]},
     contents:aiConversation,
-    generationConfig:{temperature:0.7,maxOutputTokens:1024,topP:0.9}
+    generationConfig:{temperature:0.7,maxOutputTokens:512,topP:0.9}
   };
   const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!res.ok){
     const err=await res.json().catch(()=>({}));
-    const msg=err?.error?.message||`HTTP ${res.status}`;
-    throw new Error(msg);
+    const rawMsg=err?.error?.message||'';
+    /* user-friendly quota error */
+    if(res.status===429||rawMsg.includes('quota')||rawMsg.includes('Quota')){
+      throw new Error('QUOTA_EXCEEDED');
+    }
+    throw new Error(rawMsg||`HTTP ${res.status}`);
   }
   const data=await res.json();
   const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'回答を生成できませんでした。';
@@ -2222,6 +2224,8 @@ async function sendAiMessage(){
     if(e.message==='API_KEY_MISSING'){
       appendAiMsg('system','⚠️ API キーが設定されていません');
       showAiKeyDialog();
+    } else if(e.message==='QUOTA_EXCEEDED'){
+      appendAiMsg('system','⚠️ API の無料枠を超過しました。\n① 少し待ってから再試行\n② ⚙️ からモデルを「Gemini 1.5 Flash」に変更\n③ 個人 Google アカウントで API キーを再発行');
     } else {
       appendAiMsg('system','⚠️ エラー: '+e.message);
     }
