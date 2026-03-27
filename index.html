@@ -377,6 +377,173 @@
       .ai-chat{bottom:0;right:0;left:0;width:100%;max-height:100%;height:100%;border-radius:0;max-height:100vh}
       .ai-chat-body{max-height:none;flex:1}
     }
+
+    /* ======================================================
+       DESIGN LAYER 1: CSS VARIABLES — single source of truth
+       ====================================================== */
+    :root{
+      --deep:#13201a;--forest:#265040;--moss:#478060;--sage:#7ab890;
+      --stone:#d8d2c8;--parch:#f5f0e8;--cream:#faf8f4;
+      --amber:#c47038;--amber-l:#f2e0c8;--purple:#7c55cc;
+      --text:#1c1a16;--text2:#5a554c;--text3:#8a8378;--bd:#d4cec4;
+      --sh-sm:0 1px 4px rgba(19,32,26,.08);
+      --sh-md:0 4px 16px rgba(19,32,26,.11);
+      --sh-lg:0 8px 32px rgba(19,32,26,.15);
+    }
+
+    /* ======================================================
+       DESIGN LAYER 2: LAYERED BODY BACKGROUND
+       地形の等高線を連想させる重層グラデーション
+       ====================================================== */
+    body{
+      background-color:#bfb9af;
+      background-image:
+        radial-gradient(ellipse 1000px 700px at 18% 42%,rgba(38,80,64,.10) 0%,transparent 60%),
+        radial-gradient(ellipse 700px 500px at 78% 18%,rgba(38,80,64,.08) 0%,transparent 55%),
+        radial-gradient(ellipse 550px 420px at 88% 88%,rgba(38,80,64,.09) 0%,transparent 50%),
+        radial-gradient(ellipse 620px 480px at 42% 92%,rgba(38,80,64,.07) 0%,transparent 55%),
+        radial-gradient(ellipse 400px 300px at 60% 50%,rgba(38,80,64,.04) 0%,transparent 45%);
+    }
+
+    /* グレインテクスチャ — 全体に和紙のような質感を追加 */
+    body::after{
+      content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='.07'/%3E%3C/svg%3E");
+      background-size:280px 280px;
+      mix-blend-mode:multiply;
+    }
+
+    /* ======================================================
+       DESIGN LAYER 3: SIDEBAR HEADER — mountain ridge bg
+       山稜シルエットを重ねた深い森のヘッダー
+       ====================================================== */
+    .sidebar-header::before{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:44px;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 380 44' preserveAspectRatio='none'%3E%3Cpath d='M0,44 L0,30 L18,15 L28,23 L44,8 L58,19 L74,5 L86,17 L102,11 L116,25 L134,7 L148,21 L165,13 L181,27 L198,15 L213,21 L231,9 L245,19 L261,15 L275,23 L293,11 L308,19 L323,13 L341,25 L353,17 L368,29 L380,21 L380,44 Z' fill='rgba(80,150,100,.08)'/%3E%3Cpath d='M0,44 L0,36 L26,22 L40,30 L56,18 L70,28 L86,21 L100,31 L116,25 L132,34 L148,23 L164,32 L180,27 L196,34 L212,25 L228,32 L244,23 L260,32 L276,27 L292,34 L308,25 L324,32 L340,27 L356,35 L380,33 L380,44 Z' fill='rgba(80,150,100,.14)'/%3E%3C/svg%3E");
+      background-size:100% 100%;pointer-events:none;
+    }
+
+    /* ======================================================
+       DESIGN LAYER 4: SIDEBAR BODY — depth gradient
+       ====================================================== */
+    .sidebar-body{
+      background:
+        linear-gradient(180deg,rgba(19,32,26,.04) 0%,transparent 100px) var(--parch) !important;
+    }
+
+    /* ======================================================
+       DESIGN LAYER 5: SECTION DIVIDERS — gradient fade lines
+       ====================================================== */
+    .sb-hero,.sb-filters,.sb-search,.sb-presets{
+      border-bottom:none !important;
+      position:relative;
+    }
+    .sb-hero::before,.sb-filters::before,.sb-search::before,.sb-presets::before{
+      content:'';position:absolute;bottom:0;left:14px;right:14px;height:1px;
+      background:linear-gradient(90deg,transparent,var(--bd) 18%,var(--bd) 82%,transparent);
+    }
+
+    /* ======================================================
+       DESIGN LAYER 6: VISUAL EFFECTS
+       ====================================================== */
+
+    /* ── Custom thin scrollbar ── */
+    .sidebar-body::-webkit-scrollbar{width:3px}
+    .sidebar-body::-webkit-scrollbar-track{background:transparent}
+    .sidebar-body::-webkit-scrollbar-thumb{background:rgba(38,80,64,.22);border-radius:2px}
+    .sidebar-body::-webkit-scrollbar-thumb:hover{background:rgba(38,80,64,.38)}
+    .rp-body::-webkit-scrollbar{width:3px}
+    .rp-body::-webkit-scrollbar-track{background:transparent}
+    .rp-body::-webkit-scrollbar-thumb{background:rgba(124,85,204,.22);border-radius:2px}
+    .rp-body::-webkit-scrollbar-thumb:hover{background:rgba(124,85,204,.38)}
+    .ai-chat-body::-webkit-scrollbar{width:3px}
+    .ai-chat-body::-webkit-scrollbar-track{background:transparent}
+    .ai-chat-body::-webkit-scrollbar-thumb{background:rgba(38,80,64,.18);border-radius:2px}
+
+    /* ── AI FAB pulsing glow ring ── */
+    @keyframes fab-glow{
+      0%,100%{box-shadow:0 5px 22px rgba(19,32,26,.45),0 0 0 0 rgba(90,160,110,.5)}
+      60%{box-shadow:0 5px 22px rgba(19,32,26,.45),0 0 0 12px rgba(90,160,110,0)}
+    }
+    .ai-fab:not(.open){animation:fab-glow 3.2s ease-in-out infinite}
+
+    /* ── Diagnosis button shimmer on hover ── */
+    .btn-diag{position:relative;overflow:hidden}
+    .btn-diag::before{
+      content:'';position:absolute;top:0;left:-80%;width:50%;height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+      transform:skewX(-18deg);transition:left 0s;
+    }
+    .btn-diag:hover::before{left:160%;transition:left .55s ease}
+
+    /* ── Course card left accent bar ── */
+    .sb-ccard{position:relative;overflow:hidden}
+    .sb-ccard::before{
+      content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;
+      background:var(--moss);border-radius:0 2px 2px 0;
+      transform:scaleY(0);transform-origin:center;
+      transition:transform .22s cubic-bezier(.2,.9,.3,1);
+    }
+    .sb-ccard:hover::before,.sb-ccard.highlighted::before{transform:scaleY(1)}
+
+    /* ── Active filter button enhanced glow ── */
+    .fbtn.active{
+      box-shadow:0 0 0 3px rgba(38,80,64,.16),0 2px 8px rgba(38,80,64,.28) !important;
+    }
+
+    /* ── Progress bar shimmer ── */
+    .prog-fill{position:relative;overflow:hidden}
+    .prog-fill::after{
+      content:'';position:absolute;top:0;left:-100%;bottom:0;width:60%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+      animation:prog-shimmer 2.4s ease-in-out infinite;
+    }
+    @keyframes prog-shimmer{0%{left:-100%}100%{left:200%}}
+
+    /* ── View transition (all sidebar views) ── */
+    .sb-view{animation:sb-fadein .3s cubic-bezier(.2,.9,.3,1) !important}
+    @keyframes sb-fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── Glassmorphism on map floating controls ── */
+    .map-legend-ctrl,.gmap-layer-ctrl,.map-bm-ctrl,.geo-ctrl{
+      backdrop-filter:blur(10px) saturate(1.4) !important;
+      -webkit-backdrop-filter:blur(10px) saturate(1.4) !important;
+    }
+
+    /* ── Result cards: subtle inner light ── */
+    .card{position:relative}
+    .card::after{
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(135deg,rgba(255,255,255,.055) 0%,transparent 45%);
+      border-radius:inherit;
+    }
+
+    /* ── Hero section: diagonal texture overlay ── */
+    .sb-hero{
+      background:
+        linear-gradient(135deg,rgba(234,242,234,.9) 0%,rgba(218,232,220,.85) 100%),
+        repeating-linear-gradient(
+          -48deg,transparent,transparent 12px,
+          rgba(38,80,64,.025) 12px,rgba(38,80,64,.025) 13px
+        ) !important;
+    }
+
+    /* ── AI chat message entrance ── */
+    .ai-msg{animation:msg-in .22s cubic-bezier(.2,.9,.3,1)}
+    @keyframes msg-in{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
+
+    /* ── Right panel header accent line ── */
+    .rp-header{
+      border-bottom:none !important;
+      position:relative;
+    }
+    .rp-header::after{
+      content:'';position:absolute;bottom:0;left:12px;right:12px;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(124,85,204,.3) 30%,rgba(124,85,204,.3) 70%,transparent);
+    }
+
+    /* ── Sidebar body scroll fade top ── */
+    .sidebar{--scroll-fade:linear-gradient(to bottom,var(--deep) 0,transparent 100%)}
   </style>
 </head>
 <body>
